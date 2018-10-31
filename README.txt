@@ -1,0 +1,1 @@
+Make sure to add this directory to the python path when compiling

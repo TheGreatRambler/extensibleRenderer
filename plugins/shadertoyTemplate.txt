@@ -1,0 +1,36 @@
+{version}
+
+// non-template braces have to be doubled up
+
+attribute vec2 position;
+void main()
+{{
+	gl_Position = vec4(position, 0.0, 1.0);
+}}
+-----
+{version}
+
+uniform vec3      iResolution;           // viewport resolution (in pixels)
+uniform float     iGlobalTime;           // shader playback time (in seconds)
+uniform float     iTime;                 // also shader playback time (in seconds)
+uniform vec4      iMouse;                // mouse pixel coords
+uniform vec4      iDate;                 // (year, month, day, time in seconds)
+uniform float     iSampleRate;           // sound sample rate (i.e., 44100)
+uniform sampler2D iChannel0;             // input channel. XX = 2D/Cube
+uniform sampler2D iChannel1;             // input channel. XX = 2D/Cube
+uniform sampler2D iChannel2;             // input channel. XX = 2D/Cube
+uniform sampler2D iChannel3;             // input channel. XX = 2D/Cube
+uniform vec3      iChannelResolution[4]; // channel resolution (in pixels)
+uniform float     iChannelTime[4];       // channel playback time (in sec)
+uniform vec2      iOffset;               // pixel offset for tiled rendering
+uniform int       iFrame;                // not really sure?
+
+
+out vec4 out_0;
+
+{main_body}
+
+void main()
+{{
+	mainImage(out_0, gl_FragCoord.xy + iOffset); // not gl_FragColor anymore!
+}}

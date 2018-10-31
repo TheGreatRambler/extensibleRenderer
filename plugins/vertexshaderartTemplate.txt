@@ -1,0 +1,27 @@
+{version}
+
+// non-template braces have to be doubled up
+
+in float vertexId; // the vertexId passed to each vertex in the output
+
+uniform float     vertexCount;           // number of vertices (really not float, but okay?)
+uniform vec2      resolution;            // width and height of shader viewport
+uniform vec2      mouse;                 // mouse position (normalized from -1 to 1 for both x and y)
+uniform float     time;                  // time (in seconds)
+uniform vec4      background;            // background color
+
+uniform float _dontUseDirectly_pointSize;
+
+out vec4 v_color;
+
+{main_body}
+-----
+{version}
+
+in vec4 v_color;
+out vec4 out_color;
+
+void main()
+{{
+	out_color = v_color; // not gl_FragColor anymore!
+}}
