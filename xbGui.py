@@ -73,12 +73,11 @@ class MainFrame(wx.Frame):
 		self.mainSizer.Add(self.viewingPanel, 1, wx.EXPAND, 0)
 
 	def openSetMenuPlugin(self, event):
-		self.mainSizer.Add(self.pluginSizer, 1, wx.EXPAND, 0)
+		self.mainSizer.Show(self.pluginSizer)
 		self.mainSizer.Layout()
 
 	def closeSetMenuPlugin(self, event):
 		self.mainSizer.Hide(self.pluginSizer)
-		self.mainSizer.Remove(self.pluginSizer)
 		self.mainSizer.Layout()
 
 	def onClose(self, evt):
@@ -93,6 +92,8 @@ class MainFrame(wx.Frame):
 
 	def getPluginMenu(self):
 		self.pluginSizer = xbGetPluginMenu.getPluginMenu(plugins=self.allAccesiblePlugins, mainPanel=self)
+		self.mainSizer.Add(self.pluginSizer, 1, wx.EXPAND, 0)
+		self.mainSizer.Hide(self.pluginSizer)
 
 
 class Main():

@@ -18,15 +18,15 @@ class getPluginMenu(wx.BoxSizer):
 		#self.Bind(wx.EVT_ICONIZE, self.onMinimize)
 		#self.Bind(wx.EVT_CLOSE, self.onClose)
 
-		self.PluginPanel = self.getLeftSide(parent=mainPanel)
-		self.FunctionPanel = self.getRightSide(parent=mainPanel)
+		self.PluginPanel = self.getPluginChoicePanel(parent=mainPanel)
+		self.FunctionPanel = self.getPluginInfoPanel(parent=mainPanel)
 
 		self.Add(self.PluginPanel)
 		self.Add(self.FunctionPanel)
 
 		self.createPluginForms()  # create the forms so they can be opened
 
-	def getLeftSide(self, parent):
+	def getPluginChoicePanel(self, parent):
 		pluginPanel = wx.Panel(parent=parent, id=wx.ID_ANY)
 
 		self.pluginTree = wx.TreeCtrl(parent=pluginPanel, id=wx.ID_ANY, style=wx.TR_HAS_BUTTONS)
@@ -38,7 +38,7 @@ class getPluginMenu(wx.BoxSizer):
 
 		return pluginPanel
 
-	def getRightSide(self, parent):
+	def getPluginInfoPanel(self, parent):
 		FunctionPanel = Scroller.ScrolledPanel(parent=parent, id=wx.ID_ANY)
 		self.FunctionPanelSizer = wx.BoxSizer(wx.VERTICAL)
 		FunctionPanel.SetSizer(self.FunctionPanelSizer)
