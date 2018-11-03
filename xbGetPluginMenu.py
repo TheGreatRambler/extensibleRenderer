@@ -11,6 +11,8 @@ NO_DESCRIPTION_LABEL_TEXT = ""
 class getPluginMenu(wx.BoxSizer):
 	def __init__(self, plugins, mainPanel):
 
+		self.mainPanel = mainPanel
+
 		wx.BoxSizer.__init__(self, orient=wx.VERTICAL)
 		self.plugins = plugins
 		self.lastPluginGui = None
@@ -18,32 +20,27 @@ class getPluginMenu(wx.BoxSizer):
 		#self.Bind(wx.EVT_ICONIZE, self.onMinimize)
 		#self.Bind(wx.EVT_CLOSE, self.onClose)
 
-		self.PluginPanel = self.getPluginChoicePanel(parent=mainPanel)
-		self.FunctionPanel = self.getPluginInfoPanel(parent=mainPanel)
+		self.pluginSizer = self.getPluginChoiceSizer(parent=mainPanel)
+		self.pluginInfoSizer = self.getPluginInfoSizer(parent=mainPanel)
 
-		self.Add(self.PluginPanel)
-		self.Add(self.FunctionPanel)
+		self.Add(self.pluginSizer, 0, wx.EXPAND)
+		self.Add(self.pluginInfoSizer)
 
 		self.createPluginForms()  # create the forms so they can be opened
+		self.refresh()
 
-	def getPluginChoicePanel(self, parent):
-		pluginPanel = wx.Panel(parent=parent, id=wx.ID_ANY)
-
-		self.pluginTree = wx.TreeCtrl(parent=pluginPanel, id=wx.ID_ANY, style=wx.TR_HAS_BUTTONS)
+	def getPluginChoiceSizer(self, parent):
+		self.pluginTree = wx.TreeCtrl(parent=self.mainPanel, id=wx.ID_ANY, style=wx.TR_HAS_BUTTONS)
 		self.setTreeHierarchy(tree=self.pluginTree)
 
 		self.pluginTree.Bind(wx.EVT_TREE_SEL_CHANGED, self.openPlugin)
 
-		helpers.h.fillEntirePanel(element=self.pluginTree, panel=pluginPanel, padding=8)
+		return self.pluginTree
 
-		return pluginPanel
-
-	def getPluginInfoPanel(self, parent):
-		FunctionPanel = Scroller.ScrolledPanel(parent=parent, id=wx.ID_ANY)
-		self.FunctionPanelSizer = wx.BoxSizer(wx.VERTICAL)
-		FunctionPanel.SetSizer(self.FunctionPanelSizer)
+	def getPluginInfoSizer(self, parent):
+		self.pluginInfoSizerSizer = wx.BoxSizer(wx.VERTICAL)
 		#for now, nothing
-		return FunctionPanel
+		return self.pluginInfoSizerSizer
 
 	def createPluginForms(self):
 		for plugin in self.plugins:
@@ -54,27 +51,30 @@ class getPluginMenu(wx.BoxSizer):
 					actualFunc = pluginFuncs[function]
 					# name is misleading, but it encompasses the entire function
 					functionArgumentsBox = wx.StaticBoxSizer(
-					 orient=wx.VERTICAL, parent=self.FunctionPanel, label=actualFunc.get("NAME") or function)
+					 orient=wx.VERTICAL, parent=self.mainPanel, label=actualFunc.get("NAME") or function)
 					functionDescription = wx.StaticText(
-					 parent=self.FunctionPanel, label=actualFunc.get("DESCRIPTION") or NO_DESCRIPTION_LABEL_TEXT)
+					 parent=self.mainPanel, label=actualFunc.get("DESCRIPTION") or NO_DESCRIPTION_LABEL_TEXT)
 					functionArgumentsBox.Add(functionDescription)
 					arguments = actualFunc.get("ARGUMENTS")  # returns None if there are no arguments
 					if arguments:
 						for argumentName in arguments:
 							argument = arguments[argumentName]
 							argumentName = wx.StaticText(
-							 parent=self.FunctionPanel, label=argument.get("NAME") or argumentName)
+							 parent=self.mainPanel, label=argument.get("NAME") or argumentName)
 							functionArgumentsBox.Add(argumentName)
 							argumentDescription = wx.StaticText(
-							 parent=self.FunctionPanel, label=argument.get("DESCRIPTION") or NO_DESCRIPTION_LABEL_TEXT)
+							 parent=self.mainPanel, label=argument.get("DESCRIPTION") or NO_DESCRIPTION_LABEL_TEXT)
 							functionArgumentsBox.Add(argumentDescription)
-							argumentSelectionBody = self.processArgumentNotation(argument, self.FunctionPanel)
+							argumentSelectionBody = self.processArgumentNotation(argument, self.mainPanel)
 							functionArgumentsBox.Add(argumentSelectionBody)
 					runButton = wx.Button(
-					 parent=self.FunctionPanel, label="Run Function")  # will add functionality later
+					 parent=self.mainPanel, label="Run Function")  # will add functionality later
 					functionArgumentsBox.Add(runButton)
 					pluginSizer.Add(functionArgumentsBox)  # add to main boxsizer
 			plugin.__PLUGIN_GUI = pluginSizer  # shouldn't be accesed by the plugin
+			self.pluginInfoSizer.Add(pluginSizer)
+			self.pluginInfoSizer.Hide(pluginSizer)
+			self.refresh()
 
 	def setTreeHierarchy(self, tree):
 		hierarchy = {}
@@ -102,13 +102,12 @@ class getPluginMenu(wx.BoxSizer):
 		# set right panel to plugin form
 		data = self.pluginTree.GetItemData(event.GetItem())
 		if data:
+			print(data.__PLUGIN_GUI)
 			if self.lastPluginGui:
-				self.FunctionPanelSizer.Hide(self.lastPluginGui)
-				self.FunctionPanelSizer.Detach(self.lastPluginGui)
-				self.FunctionPanelSizer.Layout()
+				self.pluginInfoSizer.Hide(self.lastPluginGui)
 			self.lastPluginGui = data.__PLUGIN_GUI
-			self.FunctionPanelSizer.Add(data.__PLUGIN_GUI)
-			self.FunctionPanel.SetupScrolling()
+			self.pluginInfoSizer.Show(data.__PLUGIN_GUI)
+			self.refresh()
 
 	def processArgumentNotation(self, argument, parent):
 		type = argument.get("TYPE")
@@ -147,6 +146,11 @@ class getPluginMenu(wx.BoxSizer):
 		else:
 			elementToReturn = wx.TextCtrl(parent=parent, value="")  # just a generic text box
 		return elementToReturn
+
+	def refresh(self):
+		self.pluginInfoSizer.Layout()
+		self.Layout()
+		self.mainPanel.Layout()
 
 	def wildcardReturn(self, fileTypes):
 		wildcardList = []

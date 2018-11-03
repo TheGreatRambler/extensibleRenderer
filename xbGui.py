@@ -34,7 +34,7 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
 
 class MainFrame(wx.Frame):
 	def __init__(self, icon):
-		wx.Frame.__init__(self, None, title=title, size=wx.Size(800, 600))
+		wx.Frame.__init__(self, None, title=title, size=wx.Size(1200, 900))
 
 		self.appTaskBarIcon = TaskBarIcon(self, icon)  # mimimize to icon on taskbar
 		self.SetIcon(icon)
@@ -51,9 +51,9 @@ class MainFrame(wx.Frame):
 		self.Center(wx.BOTH)
 
 		self.allAccesiblePlugins = getPlugins()
+		self.setupViewingPanel()
 		self.getPluginMenu()
 		self.setupMenuBar()
-		self.setupViewingPanel()
 
 	def setupMenuBar(self):
 		menuBar = wx.MenuBar()
