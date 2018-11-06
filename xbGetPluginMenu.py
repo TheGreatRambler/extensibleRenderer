@@ -71,10 +71,9 @@ class getPluginMenu(wx.BoxSizer):
 					 parent=self.mainPanel, label="Run Function")  # will add functionality later
 					functionArgumentsBox.Add(runButton)
 					pluginSizer.Add(functionArgumentsBox)  # add to main boxsizer
+			pluginSizer.__ADDED_TO_GUI = False
 			plugin.__PLUGIN_GUI = pluginSizer  # shouldn't be accesed by the plugin
-			self.pluginInfoSizer.Add(pluginSizer)
-			self.pluginInfoSizer.Hide(pluginSizer)
-			self.refresh()
+			# the plugin will be added to the sizer by the `open` function
 
 	def setTreeHierarchy(self, tree):
 		hierarchy = {}
@@ -102,7 +101,9 @@ class getPluginMenu(wx.BoxSizer):
 		# set right panel to plugin form
 		data = self.pluginTree.GetItemData(event.GetItem())
 		if data:
-			print(data.__PLUGIN_GUI)
+			if not data.__ADDED_TO_GUI:
+				self.pluginInfoSizer.Add(data.__PLUGIN_GUI)
+				data.__ADDED_TO_GUI = True
 			if self.lastPluginGui:
 				self.pluginInfoSizer.Hide(self.lastPluginGui)
 			self.lastPluginGui = data.__PLUGIN_GUI
