@@ -3,7 +3,7 @@
 import wx
 import wx.lib.agw.foldpanelbar as fpb
 
-import helpers.h
+import helpers.h as help
 
 NO_DESCRIPTION_LABEL_TEXT = ""
 
@@ -58,10 +58,13 @@ class getPluginMenu(wx.BoxSizer):
 					# TODO add elements to this panel, not to the sizer
 
 					# the sizer to add the elements, will be added to panel
-					functionSizer = wx.BoxSizer(wx.VERTICAL)
+					# functionSizer = wx.BoxSizer(wx.VERTICAL)
+					# cant use sizer
+					
+					addElement = lambda window: help.addFPB(fpb=pluginFoldOpenPanel, p=funcPanel, w=window)
 
 					functionDescription = wx.StaticText(parent=funcPanel, label=funcDescription)
-					functionSizer.Add(functionDescription)
+					addElement(functionDescription)
 					arguments = actualFunc.get("ARGUMENTS")  # returns None if there are no arguments
 					if arguments:
 						for argumentName in arguments:
@@ -69,16 +72,14 @@ class getPluginMenu(wx.BoxSizer):
 							argumentName = argument.get("NAME") or argumentName
 							argumentDescription = argument.get("DESCRIPTION") or NO_DESCRIPTION_LABEL_TEXT
 							argumentName = wx.StaticText(parent=funcPanel, label=argumentName)
-							functionSizer.Add(argumentName)
+							addElement(argumentName)
 							argumentDescription = wx.StaticText(parent=funcPanel, label=argumentDescription)
-							functionSizer.Add(argumentDescription)
+							addElement(argumentDescription)
 							argumentSelectionBody = self.processArgumentNotation(argument, funcPanel)
-							functionSizer.Add(argumentSelectionBody)
+							addElement(argumentSelectionBody)
 					runButton = wx.Button(parent=funcPanel, label="Run Function")  # will add functionality later
-					functionSizer.Add(runButton)
-					# way to add the sizer to the foldable panel, somewhat verbose
-					# the element inside will expand to fill it
-					pluginFoldOpenPanel.AddFoldPanelWindow(panel=funcPanel, window=funcPanel, flags=fpb.FPB_ALIGN_WIDTH)
+					addElement(runButton)
+					# nothing else to do
 			plugin.__ADDED_TO_GUI = False
 			plugin.__PLUGIN_GUI = pluginFoldOpenPanel  # shouldn't be accesed by the plugin
 			# the plugin will be added to the sizer by the `open` function
