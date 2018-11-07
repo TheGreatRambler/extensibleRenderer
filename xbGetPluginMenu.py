@@ -66,6 +66,7 @@ class getPluginMenu(wx.BoxSizer):
 					functionDescription = wx.StaticText(parent=funcPanel, label=funcDescription)
 					addElement(functionDescription)
 					arguments = actualFunc.get("ARGUMENTS")  # returns None if there are no arguments
+					argumentInputs = []
 					if arguments:
 						for argumentName in arguments:
 							argument = arguments[argumentName]
@@ -77,7 +78,10 @@ class getPluginMenu(wx.BoxSizer):
 							addElement(argumentDescription)
 							argumentSelectionBody = self.processArgumentNotation(argument, funcPanel)
 							addElement(argumentSelectionBody)
+							# add the input element to the list
+							argumentInputs.append(argumentSelectionBody)
 					runButton = wx.Button(parent=funcPanel, label="Run Function")  # will add functionality later
+					runButton.Bind(wx.EVT_BUTTON, lambda event: self.runFunctionOfPlugin(plugin, argumentInputs))
 					addElement(runButton)
 					# nothing else to do
 			plugin.__ADDED_TO_GUI = False
@@ -118,6 +122,9 @@ class getPluginMenu(wx.BoxSizer):
 			self.lastPluginGui = data.__PLUGIN_GUI
 			self.pluginInfoSizer.Show(data.__PLUGIN_GUI)
 			self.refresh()
+			
+	def runFunctionOfPlugin(self, plugin, inputElements):
+		# run the function with the specified arguments
 
 	def processArgumentNotation(self, argument, parent):
 		type = argument.get("TYPE")
