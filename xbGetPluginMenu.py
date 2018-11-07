@@ -77,7 +77,8 @@ class getPluginMenu(wx.BoxSizer):
 					runButton = wx.Button(parent=funcPanel, label="Run Function")  # will add functionality later
 					functionSizer.Add(runButton)
 					# way to add the sizer to the foldable panel, somewhat verbose
-					funcPanel.AddWindow(window=funcPanel)
+					# the element inside will expand to fill it
+					pluginFoldOpenPanel.AddFoldPanelWindow(panel=funcPanel, window=funcPanel, flags=fpb.FPB_ALIGN_WIDTH)
 			plugin.__ADDED_TO_GUI = False
 			plugin.__PLUGIN_GUI = pluginFoldOpenPanel  # shouldn't be accesed by the plugin
 			# the plugin will be added to the sizer by the `open` function
