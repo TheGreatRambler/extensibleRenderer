@@ -16,6 +16,9 @@ class getPluginMenu(wx.BoxSizer):
 		wx.BoxSizer.__init__(self, orient=wx.VERTICAL)
 		self.plugins = plugins
 		self.lastPluginGui = None
+		
+		# very important, the instance of the plugin that is running
+		self.currentPluginInstance = None
 
 		#self.Bind(wx.EVT_ICONIZE, self.onMinimize)
 		#self.Bind(wx.EVT_CLOSE, self.onClose)
@@ -45,6 +48,16 @@ class getPluginMenu(wx.BoxSizer):
 	def createPluginForms(self):
 		for plugin in self.plugins:
 			pluginFuncs = plugin.PLUGIN_SETTINGS.get("PLUGIN_FUNCS")
+			# completely main sizer, holds absolutely everything
+			mainPluginSizer = wx.BoxSizer(wx.VERTICAL)
+			# start plugin as an instance
+			startButton = wx.Button(parent=self.mainPanel, label="Start")
+			startButton.Bind(wx.EVT_BUTTON, lambda event: self.startPluginInstance(plugin))
+			mainPluginSizer.Add(startButton)
+			# end plugin instance
+			endButton = wx.Button(parent=self.mainPanel, label="End")
+			endButton.Bind(wx.EVT_BUTTON, lambda event: self.endPluginInstance())
+			mainPluginSizer.Add(endButton)
 			# a fold panel, looks pretty
 			pluginFoldOpenPanel = fpb.FoldPanelBar(parent=self.mainPanel, agwStyle=fpb.FPB_VERTICAL)
 			if pluginFuncs:
@@ -79,13 +92,14 @@ class getPluginMenu(wx.BoxSizer):
 							argumentSelectionBody = self.processArgumentNotation(argument, funcPanel)
 							addElement(argumentSelectionBody)
 							# add the input element to the list
-							argumentInputs.append(argumentSelectionBody)
+							argumentInputs.append([argumentName, argumentSelectionBody])
 					runButton = wx.Button(parent=funcPanel, label="Run Function")  # will add functionality later
-					runButton.Bind(wx.EVT_BUTTON, lambda event: self.runFunctionOfPlugin(plugin, argumentInputs))
+					runButton.Bind(wx.EVT_BUTTON, lambda event: self.runFunctionOfCurrentPlugin(function, argumentInputs))
 					addElement(runButton)
 					# nothing else to do
+			mainPluginSizer.Add(pluginFoldOpenPanel)
 			plugin.__ADDED_TO_GUI = False
-			plugin.__PLUGIN_GUI = pluginFoldOpenPanel  # shouldn't be accesed by the plugin
+			plugin.__PLUGIN_GUI = mainPluginSizer  # shouldn't be accesed by the plugin
 			# the plugin will be added to the sizer by the `open` function
 
 	def setTreeHierarchy(self, tree):
@@ -123,8 +137,23 @@ class getPluginMenu(wx.BoxSizer):
 			self.pluginInfoSizer.Show(data.__PLUGIN_GUI)
 			self.refresh()
 			
-	def runFunctionOfPlugin(self, plugin, inputElements):
+	def runFunctionOfCurrentPlugin(self, functionName, inputElements):
 		# run the function with the specified arguments
+		argumentsDict = {}
+		for argument in inputElements:
+			input = argument[1] # will change
+			argumentsDict[argument[0]] = input
+		getattr(self.currentPluginInstance, functionName)(**argumentsDict)
+		
+	def startPluginInstance(self, pluginToUse):
+		# start the darn instance!
+		self.currentPluginInstance = pluginToUse.Main()
+		
+	def endPluginInstance(self):
+		# kill current instance if it exists
+		if self.currentPluginInstance:
+			del self.currentPluginInstance
+			self.currentPluginInstance = None
 
 	def processArgumentNotation(self, argument, parent):
 		type = argument.get("TYPE")
