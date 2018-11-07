@@ -1,7 +1,7 @@
 # pylint: disable=E1101
 
 import wx
-import wx.lib.scrolledpanel as Scroller
+import wx.lib.agw.foldpanelbar as fpb
 
 import helpers.h
 
@@ -45,34 +45,41 @@ class getPluginMenu(wx.BoxSizer):
 	def createPluginForms(self):
 		for plugin in self.plugins:
 			pluginFuncs = plugin.PLUGIN_SETTINGS.get("PLUGIN_FUNCS")
-			pluginSizer = wx.BoxSizer(wx.VERTICAL)
+			# a fold panel, looks pretty
+			pluginFoldOpenPanel = fpb.FoldPanelBar(parent=self.mainPanel, agwStyle=fpb.FPB_VERTICAL)
 			if pluginFuncs:
 				for function in pluginFuncs:
 					actualFunc = pluginFuncs[function]
-					# name is misleading, but it encompasses the entire function
-					functionArgumentsBox = wx.StaticBoxSizer(
-					 orient=wx.VERTICAL, parent=self.mainPanel, label=actualFunc.get("NAME") or function)
-					functionDescription = wx.StaticText(
-					 parent=self.mainPanel, label=actualFunc.get("DESCRIPTION") or NO_DESCRIPTION_LABEL_TEXT)
-					functionArgumentsBox.Add(functionDescription)
+					funcName = actualFunc.get("NAME") or function
+					funcDescription = actualFunc.get("DESCRIPTION") or NO_DESCRIPTION_LABEL_TEXT
+
+					# the panel to hold the function
+					funcPanel = pluginFoldOpenPanel.AddFoldPanel(caption=funcName, collapsed=True)
+					# TODO add elements to this panel, not to the sizer
+
+					# the sizer to add the elements, will be added to panel
+					functionSizer = wx.BoxSizer(wx.VERTICAL)
+
+					functionDescription = wx.StaticText(parent=funcPanel, label=funcDescription)
+					functionSizer.Add(functionDescription)
 					arguments = actualFunc.get("ARGUMENTS")  # returns None if there are no arguments
 					if arguments:
 						for argumentName in arguments:
 							argument = arguments[argumentName]
-							argumentName = wx.StaticText(
-							 parent=self.mainPanel, label=argument.get("NAME") or argumentName)
-							functionArgumentsBox.Add(argumentName)
-							argumentDescription = wx.StaticText(
-							 parent=self.mainPanel, label=argument.get("DESCRIPTION") or NO_DESCRIPTION_LABEL_TEXT)
-							functionArgumentsBox.Add(argumentDescription)
-							argumentSelectionBody = self.processArgumentNotation(argument, self.mainPanel)
-							functionArgumentsBox.Add(argumentSelectionBody)
-					runButton = wx.Button(
-					 parent=self.mainPanel, label="Run Function")  # will add functionality later
-					functionArgumentsBox.Add(runButton)
-					pluginSizer.Add(functionArgumentsBox)  # add to main boxsizer
-			pluginSizer.__ADDED_TO_GUI = False
-			plugin.__PLUGIN_GUI = pluginSizer  # shouldn't be accesed by the plugin
+							argumentName = argument.get("NAME") or argumentName
+							argumentDescription = argument.get("DESCRIPTION") or NO_DESCRIPTION_LABEL_TEXT
+							argumentName = wx.StaticText(parent=funcPanel, label=argumentName)
+							functionSizer.Add(argumentName)
+							argumentDescription = wx.StaticText(parent=funcPanel, label=argumentDescription)
+							functionSizer.Add(argumentDescription)
+							argumentSelectionBody = self.processArgumentNotation(argument, funcPanel)
+							functionSizer.Add(argumentSelectionBody)
+					runButton = wx.Button(parent=funcPanel, label="Run Function")  # will add functionality later
+					functionSizer.Add(runButton)
+					# way to add the sizer to the foldable panel, somewhat verbose
+					funcPanel.AddWindow(window=funcPanel)
+			plugin.__ADDED_TO_GUI = False
+			plugin.__PLUGIN_GUI = pluginFoldOpenPanel  # shouldn't be accesed by the plugin
 			# the plugin will be added to the sizer by the `open` function
 
 	def setTreeHierarchy(self, tree):
