@@ -16,7 +16,7 @@ class getPluginMenu(wx.BoxSizer):
 		wx.BoxSizer.__init__(self, orient=wx.VERTICAL)
 		self.plugins = plugins
 		self.lastPluginGui = None
-		
+
 		# very important, the instance of the plugin that is running
 		self.currentPluginInstance = None
 
@@ -26,8 +26,8 @@ class getPluginMenu(wx.BoxSizer):
 		self.pluginSizer = self.getPluginChoiceSizer(parent=mainPanel)
 		self.pluginInfoSizer = self.getPluginInfoSizer(parent=mainPanel)
 
-		self.Add(self.pluginSizer, 0, wx.EXPAND)
-		self.Add(self.pluginInfoSizer)
+		self.Add(self.pluginSizer, 1, wx.EXPAND, 0)
+		self.Add(self.pluginInfoSizer, 1, wx.EXPAND, 0)
 
 		self.createPluginForms()  # create the forms so they can be opened
 		self.refresh()
@@ -53,11 +53,11 @@ class getPluginMenu(wx.BoxSizer):
 			# start plugin as an instance
 			startButton = wx.Button(parent=self.mainPanel, label="Start")
 			startButton.Bind(wx.EVT_BUTTON, lambda event: self.startPluginInstance(plugin))
-			mainPluginSizer.Add(startButton)
+			mainPluginSizer.Add(startButton, 0, wx.EXPAND)
 			# end plugin instance
 			endButton = wx.Button(parent=self.mainPanel, label="End")
 			endButton.Bind(wx.EVT_BUTTON, lambda event: self.endPluginInstance())
-			mainPluginSizer.Add(endButton)
+			mainPluginSizer.Add(endButton, 0, wx.EXPAND)
 			# a fold panel, looks pretty
 			pluginFoldOpenPanel = fpb.FoldPanelBar(parent=self.mainPanel, agwStyle=fpb.FPB_VERTICAL)
 			if pluginFuncs:
@@ -67,13 +67,14 @@ class getPluginMenu(wx.BoxSizer):
 					funcDescription = actualFunc.get("DESCRIPTION") or NO_DESCRIPTION_LABEL_TEXT
 
 					# the panel to hold the function
-					funcPanel = pluginFoldOpenPanel.AddFoldPanel(caption=funcName, collapsed=True)
+					# open panel closed
+					funcPanel = pluginFoldOpenPanel.AddFoldPanel(funcName, False)
 					# TODO add elements to this panel, not to the sizer
 
 					# the sizer to add the elements, will be added to panel
 					# functionSizer = wx.BoxSizer(wx.VERTICAL)
 					# cant use sizer
-					
+
 					addElement = lambda window: help.addFPB(fpb=pluginFoldOpenPanel, p=funcPanel, w=window)
 
 					functionDescription = wx.StaticText(parent=funcPanel, label=funcDescription)
@@ -94,10 +95,12 @@ class getPluginMenu(wx.BoxSizer):
 							# add the input element to the list
 							argumentInputs.append([argumentName, argumentSelectionBody])
 					runButton = wx.Button(parent=funcPanel, label="Run Function")  # will add functionality later
-					runButton.Bind(wx.EVT_BUTTON, lambda event: self.runFunctionOfCurrentPlugin(function, argumentInputs))
+					runButton.Bind(wx.EVT_BUTTON,
+					               lambda event: self.runFunctionOfCurrentPlugin(function, argumentInputs))
 					addElement(runButton)
 					# nothing else to do
-			mainPluginSizer.Add(pluginFoldOpenPanel)
+			mainPluginSizer.Add(pluginFoldOpenPanel, 0, wx.EXPAND)
+			mainPluginSizer.Layout()
 			plugin.__ADDED_TO_GUI = False
 			plugin.__PLUGIN_GUI = mainPluginSizer  # shouldn't be accesed by the plugin
 			# the plugin will be added to the sizer by the `open` function
@@ -129,26 +132,27 @@ class getPluginMenu(wx.BoxSizer):
 		data = self.pluginTree.GetItemData(event.GetItem())
 		if data:
 			if not data.__ADDED_TO_GUI:
-				self.pluginInfoSizer.Add(data.__PLUGIN_GUI)
+				self.pluginInfoSizer.Add(data.__PLUGIN_GUI, 0, wx.EXPAND, 0)
 				data.__ADDED_TO_GUI = True
 			if self.lastPluginGui:
 				self.pluginInfoSizer.Hide(self.lastPluginGui)
 			self.lastPluginGui = data.__PLUGIN_GUI
 			self.pluginInfoSizer.Show(data.__PLUGIN_GUI)
 			self.refresh()
-			
+
 	def runFunctionOfCurrentPlugin(self, functionName, inputElements):
 		# run the function with the specified arguments
 		argumentsDict = {}
 		for argument in inputElements:
-			input = argument[1] # will change
+			input = argument[1]  # will change
 			argumentsDict[argument[0]] = input
+		# apply dictionary as parameters
 		getattr(self.currentPluginInstance, functionName)(**argumentsDict)
-		
+
 	def startPluginInstance(self, pluginToUse):
 		# start the darn instance!
 		self.currentPluginInstance = pluginToUse.Main()
-		
+
 	def endPluginInstance(self):
 		# kill current instance if it exists
 		if self.currentPluginInstance:
