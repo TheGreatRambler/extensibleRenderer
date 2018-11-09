@@ -68,17 +68,17 @@ class getPluginMenu(wx.BoxSizer):
 
 					# the panel to hold the function
 					# open panel closed
-					funcPanel = pluginFoldOpenPanel.AddFoldPanel(funcName, False)
-					# TODO add elements to this panel, not to the sizer
+					foldFuncPanel = pluginFoldOpenPanel.AddFoldPanel(funcName, collapsed=True)
 
-					# the sizer to add the elements, will be added to panel
-					# functionSizer = wx.BoxSizer(wx.VERTICAL)
-					# cant use sizer
+					# the actual panel to hold the elements (the one above is false)
+					contentPanel = wx.Panel(parent=foldFuncPanel)
+					contentSizer = wx.BoxSizer(wx.VERTICAL)
 
-					addElement = lambda window: help.addFPB(fpb=pluginFoldOpenPanel, p=funcPanel, w=window)
+					# the widgets parent
+					widgetParent = contentPanel
 
-					functionDescription = wx.StaticText(parent=funcPanel, label=funcDescription)
-					addElement(functionDescription)
+					functionDescription = wx.StaticText(parent=widgetParent, label=funcDescription)
+					contentSizer.Add(functionDescription)
 					arguments = actualFunc.get("ARGUMENTS")  # returns None if there are no arguments
 					argumentInputs = []
 					if arguments:
@@ -86,18 +86,24 @@ class getPluginMenu(wx.BoxSizer):
 							argument = arguments[argumentName]
 							argumentName = argument.get("NAME") or argumentName
 							argumentDescription = argument.get("DESCRIPTION") or NO_DESCRIPTION_LABEL_TEXT
-							argumentName = wx.StaticText(parent=funcPanel, label=argumentName)
-							addElement(argumentName)
-							argumentDescription = wx.StaticText(parent=funcPanel, label=argumentDescription)
-							addElement(argumentDescription)
-							argumentSelectionBody = self.processArgumentNotation(argument, funcPanel)
-							addElement(argumentSelectionBody)
+							argumentName = wx.StaticText(parent=widgetParent, label=argumentName)
+							contentSizer.Add(argumentName)
+							argumentDescription = wx.StaticText(parent=widgetParent, label=argumentDescription)
+							contentSizer.Add(argumentDescription)
+							argumentSelectionBody = self.processArgumentNotation(argument, widgetParent)
+							contentSizer.Add(argumentSelectionBody)
 							# add the input element to the list
 							argumentInputs.append([argumentName, argumentSelectionBody])
-					runButton = wx.Button(parent=funcPanel, label="Run Function")  # will add functionality later
+					runButton = wx.Button(
+					 parent=widgetParent, label="Run Function")  # will add functionality later
 					runButton.Bind(wx.EVT_BUTTON,
 					               lambda event: self.runFunctionOfCurrentPlugin(function, argumentInputs))
-					addElement(runButton)
+					contentSizer.Add(runButton)
+					contentSizer.Layout()
+					mainPluginSizer.Add(contentSizer)  # TEST
+					contentPanel.SetSizer(contentSizer)
+					# the important part that adds the widget panel to the foldopenbar
+					pluginFoldOpenPanel.AddFoldPanelWindow(panel=foldFuncPanel, window=contentPanel)
 					# nothing else to do
 			mainPluginSizer.Add(pluginFoldOpenPanel, 0, wx.EXPAND)
 			mainPluginSizer.Layout()

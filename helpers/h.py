@@ -251,7 +251,3 @@ def fillEntirePanel(element, panel, padding=1):
 	sizer = wx.BoxSizer(wx.VERTICAL)
 	sizer.Add(element, 1, wx.EXPAND | wx.ALL, padding)
 	panel.SetSizer(sizer)
-
-
-def addFPB(fpb, p, w):
-	fpb.AddFoldPanelWindow(p, w)
