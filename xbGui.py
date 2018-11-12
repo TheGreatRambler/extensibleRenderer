@@ -2,6 +2,7 @@
 
 import wx
 import wx.adv
+import PIL.ImageChops  # from PIL
 
 import os
 import os.path
@@ -39,6 +40,7 @@ class MainFrame(wx.Frame):
 		self.appTaskBarIcon = TaskBarIcon(self, icon)  # mimimize to icon on taskbar
 		self.SetIcon(icon)
 		self.icon = icon
+		self.viewingPanelSize = (400, 250)
 
 		self.mainSizer = wx.BoxSizer(wx.HORIZONTAL)
 		#self.mainSizer.SetSizeHints(self)
@@ -69,12 +71,20 @@ class MainFrame(wx.Frame):
 		self.SetMenuBar(menuBar)
 
 	def setupViewingPanel(self):
+		self.viewingPanelSizer = wx.BoxSizer(wx.VERTICAL)
 		self.viewingPanel = wx.Panel(parent=self, id=wx.ID_ANY)
-		self.mainSizer.Add(self.viewingPanel, 1, wx.EXPAND, 0)
+		self.SetAutoLayout(True)  # so that painting can go on uninterupted
+		self.viewingPanel.SetSizer(self.viewingPanelSizer)
+		self.viewingPanel.SetSize(self.viewingPanelSize)
+
+		defaultImage = PIL.Image.open("resources/plugin-not-started.png")
+		self.setViewingPanelImage(defaultImage)
+
+		self.mainSizer.Add(self.viewingPanel, 1, wx.ALL, 0)
 
 	def openSetMenuPlugin(self, event):
 		self.mainSizer.Show(self.pluginSizer)
-		self.mainSizer.Layout()
+		self.Layout()
 
 	def closeSetMenuPlugin(self, event):
 		self.mainSizer.Hide(self.pluginSizer)
@@ -94,6 +104,31 @@ class MainFrame(wx.Frame):
 		self.pluginSizer = xbGetPluginMenu.getPluginMenu(plugins=self.allAccesiblePlugins, mainPanel=self)
 		self.mainSizer.Add(self.pluginSizer, 1, wx.EXPAND, 0)
 		self.mainSizer.Hide(self.pluginSizer)
+
+	def setViewingPanelImage(self, pilImage):
+		if hasattr(self, "lastPilImage"):
+			if PIL.ImageChops.difference(pilImage, self.lastPilImage).getbbox() is None:
+				return
+			else:
+				self.lastPilImage.close()
+		# only gets to this point if the image is not the same as last time
+		self.lastPilImage = pilImage
+		wxImg = wx.Image(*pilImage.size)
+		pilRgbStr = pilImage.convert("RGB").tobytes()  # no transparency supported
+		wxImg.SetData(pilRgbStr)
+		# resize to small image so it is not too big in the panel
+		# the 400 and 250 need to be changed if the panel needs to be resized
+		currentImage = wxImg.Scale(self.viewingPanelSize[0], self.viewingPanelSize[1],
+		                           wx.IMAGE_QUALITY_HIGH).ConvertToBitmap()
+		dc = wx.MemoryDC(currentImage)
+		dc.DrawBitmap(currentImage, 0, 0)
+
+		bitmapToAdd = wx.StaticBitmap(parent=self, id=wx.ID_ANY, bitmap=currentImage)
+		if len(self.viewingPanelSizer.GetChildren()) != 0:
+			# not first time adding it
+			self.viewingPanelSizer.Remove(self.lastViewingBitmap)
+		self.viewingPanelSizer.Add(bitmapToAdd, 0, wx.ALL | wx.ALIGN_CENTER, 10)  # 10 is border
+		self.lastViewingBitmap = bitmapToAdd
 
 
 class Main():

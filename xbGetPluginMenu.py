@@ -1,7 +1,7 @@
 # pylint: disable=E1101
 
 import wx
-import wx.lib.agw.foldpanelbar as fpb
+import wx.lib.scrolledpanel as scrolled
 
 import helpers.h as help
 
@@ -27,7 +27,7 @@ class getPluginMenu(wx.BoxSizer):
 		self.pluginInfoSizer = self.getPluginInfoSizer(parent=mainPanel)
 
 		self.Add(self.pluginSizer, 1, wx.EXPAND, 0)
-		self.Add(self.pluginInfoSizer, 1, wx.EXPAND, 0)
+		self.Add(self.pluginInfoSizer, 3, wx.EXPAND, 0)
 
 		self.createPluginForms()  # create the forms so they can be opened
 		self.refresh()
@@ -49,29 +49,28 @@ class getPluginMenu(wx.BoxSizer):
 		for plugin in self.plugins:
 			pluginFuncs = plugin.PLUGIN_SETTINGS.get("PLUGIN_FUNCS")
 			# completely main sizer, holds absolutely everything
+			scrollPanel = scrolled.ScrolledPanel(parent=self.mainPanel)
+			scrollPanel.SetAutoLayout(1)
+			scrollPanel.SetupScrolling(scroll_x=False)
+
 			mainPluginSizer = wx.BoxSizer(wx.VERTICAL)
 			# start plugin as an instance
-			startButton = wx.Button(parent=self.mainPanel, label="Start")
+			startButton = wx.Button(parent=scrollPanel, label="Start")
 			startButton.Bind(wx.EVT_BUTTON, lambda event: self.startPluginInstance(plugin))
 			mainPluginSizer.Add(startButton, 0, wx.EXPAND)
 			# end plugin instance
-			endButton = wx.Button(parent=self.mainPanel, label="End")
+			endButton = wx.Button(parent=scrollPanel, label="End")
 			endButton.Bind(wx.EVT_BUTTON, lambda event: self.endPluginInstance())
 			mainPluginSizer.Add(endButton, 0, wx.EXPAND)
 			# a fold panel, looks pretty
-			pluginFoldOpenPanel = fpb.FoldPanelBar(parent=self.mainPanel, agwStyle=fpb.FPB_VERTICAL)
 			if pluginFuncs:
 				for function in pluginFuncs:
 					actualFunc = pluginFuncs[function]
 					funcName = actualFunc.get("NAME") or function
 					funcDescription = actualFunc.get("DESCRIPTION") or NO_DESCRIPTION_LABEL_TEXT
 
-					# the panel to hold the function
-					# open panel closed
-					foldFuncPanel = pluginFoldOpenPanel.AddFoldPanel(funcName, collapsed=True)
-
-					# the actual panel to hold the elements (the one above is false)
-					contentPanel = wx.Panel(parent=foldFuncPanel)
+					# the actual panel to hold the elements
+					contentPanel = wx.Panel(parent=scrollPanel)
 					contentSizer = wx.BoxSizer(wx.VERTICAL)
 
 					# the widgets parent
@@ -86,29 +85,31 @@ class getPluginMenu(wx.BoxSizer):
 							argument = arguments[argumentName]
 							argumentName = argument.get("NAME") or argumentName
 							argumentDescription = argument.get("DESCRIPTION") or NO_DESCRIPTION_LABEL_TEXT
-							argumentName = wx.StaticText(parent=widgetParent, label=argumentName)
-							contentSizer.Add(argumentName)
-							argumentDescription = wx.StaticText(parent=widgetParent, label=argumentDescription)
-							contentSizer.Add(argumentDescription)
-							argumentSelectionBody = self.processArgumentNotation(argument, widgetParent)
-							contentSizer.Add(argumentSelectionBody)
+
+							argumentBox = wx.StaticBoxSizer(orient=wx.VERTICAL, parent=contentPanel, label=argumentName)
+
+							argumentDescription = wx.StaticText(
+							 parent=argumentBox.GetStaticBox(), label=argumentDescription)
+							argumentBox.Add(argumentDescription, 1, wx.ALIGN_CENTER | wx.EXPAND)
+							argumentSelectionBody = self.processArgumentNotation(argument, argumentBox.GetStaticBox())
+							argumentBox.Add(argumentSelectionBody, 1, wx.ALIGN_CENTER | wx.EXPAND)
+
+							contentSizer.Add(argumentBox)
+
 							# add the input element to the list
 							argumentInputs.append([argumentName, argumentSelectionBody])
 					runButton = wx.Button(
 					 parent=widgetParent, label="Run Function")  # will add functionality later
 					runButton.Bind(wx.EVT_BUTTON,
 					               lambda event: self.runFunctionOfCurrentPlugin(function, argumentInputs))
-					contentSizer.Add(runButton)
-					contentSizer.Layout()
-					mainPluginSizer.Add(contentSizer)  # TEST
+					contentSizer.Add(runButton, 1, wx.ALIGN_CENTER | wx.EXPAND)
 					contentPanel.SetSizer(contentSizer)
 					# the important part that adds the widget panel to the foldopenbar
-					pluginFoldOpenPanel.AddFoldPanelWindow(panel=foldFuncPanel, window=contentPanel)
+					mainPluginSizer.Add(contentPanel, 1, wx.ALIGN_CENTER | wx.EXPAND)
 					# nothing else to do
-			mainPluginSizer.Add(pluginFoldOpenPanel, 0, wx.EXPAND)
-			mainPluginSizer.Layout()
+			scrollPanel.SetSizer(mainPluginSizer)
 			plugin.__ADDED_TO_GUI = False
-			plugin.__PLUGIN_GUI = mainPluginSizer  # shouldn't be accesed by the plugin
+			plugin.__PLUGIN_GUI = scrollPanel  # shouldn't be accesed by the plugin
 			# the plugin will be added to the sizer by the `open` function
 
 	def setTreeHierarchy(self, tree):
@@ -138,7 +139,7 @@ class getPluginMenu(wx.BoxSizer):
 		data = self.pluginTree.GetItemData(event.GetItem())
 		if data:
 			if not data.__ADDED_TO_GUI:
-				self.pluginInfoSizer.Add(data.__PLUGIN_GUI, 0, wx.EXPAND, 0)
+				self.pluginInfoSizer.Add(data.__PLUGIN_GUI, 1, wx.EXPAND)
 				data.__ADDED_TO_GUI = True
 			if self.lastPluginGui:
 				self.pluginInfoSizer.Hide(self.lastPluginGui)
