@@ -107,10 +107,10 @@ class MainFrame(wx.Frame):
 
 	def setViewingPanelImage(self, pilImage):
 		if hasattr(self, "lastPilImage"):
-			if PIL.ImageChops.difference(pilImage, self.lastPilImage).getbbox() is None:
+			if PIL.ImageChops.difference(pilImage, self.lastPilImage).getbbox() is None: # pylint: disable=E0203
 				return
 			else:
-				self.lastPilImage.close()
+				self.lastPilImage.close() # pylint: disable=E0203
 		# only gets to this point if the image is not the same as last time
 		self.lastPilImage = pilImage
 		wxImg = wx.Image(*pilImage.size)
@@ -126,7 +126,7 @@ class MainFrame(wx.Frame):
 		bitmapToAdd = wx.StaticBitmap(parent=self, id=wx.ID_ANY, bitmap=currentImage)
 		if len(self.viewingPanelSizer.GetChildren()) != 0:
 			# not first time adding it
-			self.viewingPanelSizer.Remove(self.lastViewingBitmap)
+			self.viewingPanelSizer.Remove(self.lastViewingBitmap) # pylint: disable=E0203
 		self.viewingPanelSizer.Add(bitmapToAdd, 0, wx.ALL | wx.ALIGN_CENTER, 10)  # 10 is border
 		self.lastViewingBitmap = bitmapToAdd
 
