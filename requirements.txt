@@ -2,3 +2,4 @@ numpy
 ModernGL
 Pillow
 wxPython
+dotmap

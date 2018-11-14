@@ -2,6 +2,10 @@
 
 import wx
 import wx.lib.scrolledpanel as scrolled
+# button supporting a background color
+import wx.lib.buttons as coolButtons
+
+import SETTINGS
 
 import helpers.h as help
 
@@ -13,7 +17,7 @@ class getPluginMenu(wx.BoxSizer):
 
 		self.mainPanel = mainPanel
 
-		wx.BoxSizer.__init__(self, orient=wx.VERTICAL)
+		wx.BoxSizer.__init__(self, orient=wx.HORIZONTAL)
 		self.plugins = plugins
 		self.lastPluginGui = None
 
@@ -27,7 +31,7 @@ class getPluginMenu(wx.BoxSizer):
 		self.pluginInfoSizer = self.getPluginInfoSizer(parent=mainPanel)
 
 		self.Add(self.pluginSizer, 1, wx.EXPAND, 0)
-		self.Add(self.pluginInfoSizer, 3, wx.EXPAND, 0)
+		self.Add(self.pluginInfoSizer, 2, wx.EXPAND, 0)
 
 		self.createPluginForms()  # create the forms so they can be opened
 		self.refresh()
@@ -47,7 +51,7 @@ class getPluginMenu(wx.BoxSizer):
 
 	def createPluginForms(self):
 		for plugin in self.plugins:
-			pluginFuncs = plugin.PLUGIN_SETTINGS.get("PLUGIN_FUNCS")
+			pluginVariables = plugin.PLUGIN_SETTINGS.get("VARIABLES")
 			# completely main sizer, holds absolutely everything
 			scrollPanel = scrolled.ScrolledPanel(parent=self.mainPanel)
 			scrollPanel.SetAutoLayout(1)
@@ -63,50 +67,33 @@ class getPluginMenu(wx.BoxSizer):
 			endButton.Bind(wx.EVT_BUTTON, lambda event: self.endPluginInstance())
 			mainPluginSizer.Add(endButton, 0, wx.EXPAND)
 			# a fold panel, looks pretty
-			if pluginFuncs:
-				for function in pluginFuncs:
-					actualFunc = pluginFuncs[function]
-					funcName = actualFunc.get("NAME") or function
-					funcDescription = actualFunc.get("DESCRIPTION") or NO_DESCRIPTION_LABEL_TEXT
+			if pluginVariables:
+				for variableName in pluginVariables:
+					variable = pluginVariables[variableName]
+					variableName = variable.get("NAME") or variableName
+					variableDescription = variable.get("DESCRIPTION") or NO_DESCRIPTION_LABEL_TEXT
 
-					# the actual panel to hold the elements
+					# the sizer (which has a static box in it) to add
 					contentPanel = wx.Panel(parent=scrollPanel)
-					contentSizer = wx.BoxSizer(wx.VERTICAL)
+					contentSizer = wx.StaticBoxSizer(wx.VERTICAL, contentPanel, variableName)
+					# set background color
+					contentSizer.GetStaticBox().SetBackgroundColour(SETTINGS.theme.plugin_variable_background)
 
-					# the widgets parent
-					widgetParent = contentPanel
+					variableDescription = wx.StaticText(parent=contentPanel, label=variableDescription)
+					contentSizer.Add(variableDescription, 1, wx.ALIGN_CENTER | wx.EXPAND)
 
-					functionDescription = wx.StaticText(parent=widgetParent, label=funcDescription)
-					contentSizer.Add(functionDescription)
-					arguments = actualFunc.get("ARGUMENTS")  # returns None if there are no arguments
-					argumentInputs = []
-					if arguments:
-						for argumentName in arguments:
-							argument = arguments[argumentName]
-							argumentName = argument.get("NAME") or argumentName
-							argumentDescription = argument.get("DESCRIPTION") or NO_DESCRIPTION_LABEL_TEXT
+					variableControl = self.processArgumentNotation(variable, contentPanel)
+					contentSizer.Add(variableControl, 1, wx.ALIGN_CENTER | wx.EXPAND)
 
-							argumentBox = wx.StaticBoxSizer(orient=wx.VERTICAL, parent=contentPanel, label=argumentName)
+					setButton = coolButtons.GenButton(parent=contentPanel, label="Set")
+					# gets theme color and sets the button to have that color
+					setButton.SetBackgroundColour(SETTINGS.theme.set_button)
+					setButton.Bind(wx.EVT_BUTTON, lambda event: self.setVariable(variableName, variableControl))
+					contentSizer.Add(setButton, 1, wx.ALIGN_CENTER | wx.EXPAND)
 
-							argumentDescription = wx.StaticText(
-							 parent=argumentBox.GetStaticBox(), label=argumentDescription)
-							argumentBox.Add(argumentDescription, 1, wx.ALIGN_CENTER | wx.EXPAND)
-							argumentSelectionBody = self.processArgumentNotation(argument, argumentBox.GetStaticBox())
-							argumentBox.Add(argumentSelectionBody, 1, wx.ALIGN_CENTER | wx.EXPAND)
-
-							contentSizer.Add(argumentBox)
-
-							# add the input element to the list
-							argumentInputs.append([argumentName, argumentSelectionBody])
-					runButton = wx.Button(
-					 parent=widgetParent, label="Run Function")  # will add functionality later
-					runButton.Bind(wx.EVT_BUTTON,
-					               lambda event: self.runFunctionOfCurrentPlugin(function, argumentInputs))
-					contentSizer.Add(runButton, 1, wx.ALIGN_CENTER | wx.EXPAND)
 					contentPanel.SetSizer(contentSizer)
-					# the important part that adds the widget panel to the foldopenbar
+
 					mainPluginSizer.Add(contentPanel, 1, wx.ALIGN_CENTER | wx.EXPAND)
-					# nothing else to do
 			scrollPanel.SetSizer(mainPluginSizer)
 			plugin.__ADDED_TO_GUI = False
 			plugin.__PLUGIN_GUI = scrollPanel  # shouldn't be accesed by the plugin
@@ -147,14 +134,11 @@ class getPluginMenu(wx.BoxSizer):
 			self.pluginInfoSizer.Show(data.__PLUGIN_GUI)
 			self.refresh()
 
-	def runFunctionOfCurrentPlugin(self, functionName, inputElements):
+	def setVariable(self, variableName, variableControl):
 		# run the function with the specified arguments
-		argumentsDict = {}
-		for argument in inputElements:
-			input = argument[1]  # will change
-			argumentsDict[argument[0]] = input
-		# apply dictionary as parameters
-		getattr(self.currentPluginInstance, functionName)(**argumentsDict)
+		#getattr(self.currentPluginInstance, variableName) = variableControl
+		# create a helper function to get the value of the variable control
+		self.currentPluginInstance._change_var(variableName)  # notify the plugin
 
 	def startPluginInstance(self, pluginToUse):
 		# start the darn instance!

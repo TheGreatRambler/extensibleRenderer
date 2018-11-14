@@ -9,45 +9,35 @@ PLUGIN_SETTINGS = {
  "NAME": "Shader Background",
  "DESCRIPTION": "Render shader to background",
  "CATEGORY": "GPU",
- "PLUGIN_FUNCS": {
-	 "setShader": {
-		 "NAME": "Set shader",
-		 "DESCRIPTION": "Set the shader file to use",
-		 "ARGUMENTS": {
-			 "shader": {
-				 "NAME": "Shader",
-				 "DESCRIPTION": "Shader file",
-				 "TYPE": "FILE .glsl|GLSL_Shader"
-			 },
-			 "shaderType": {
-				 "NAME": "Shader type",
-				 "DESCRIPTION": "The shader type (choose shadertoy for shadertoy shaders and vertexshaderart for vertexshaderart.com shaders)",
-				 "TYPE": "DROPDOWN shadertoy vertexshaderart"
-			 },
-			 "vertexNum": {
-				 "REQUIRES": "shaderType vertexshaderart",
-				 "NAME": "Number of vertices",
-				 "DESCRIPTION": "Set the number of vertices to render in vertexshaderart shaders",
-				 "TYPE": "SLIDER 1 10000"
-			 }
-		 }
-	 },
-	 "setRenderMode": {
-		 "NAME": "Set render mode for shader",
-		 #"DESCRIPTION": ""
-		 "ARGUMENTS": {
-			 "renderMode": {
-				 #"DESCRIPTION": ""
-				 "TYPE": "DROPDOWN POINTS LINES LINE_STRIP LINE_LOOP TRIANGLES TRIANGLE_STRIP TRIANGLE_FAN"
-			 }
-		 }
-	 }
+ "VARIABLES": {
+  "shader": {
+   "NAME": "Shader",
+   "DESCRIPTION": "Shader file",
+   "TYPE": "FILE .glsl|GLSL_Shader"
+  },
+  "shaderType": {
+   "NAME":
+   "Shader type",
+   "DESCRIPTION":
+   "The shader type (choose shadertoy for shadertoy shaders and vertexshaderart for vertexshaderart.com shaders)",
+   "TYPE":
+   "DROPDOWN shadertoy vertexshaderart"
+  },
+  "vertexNum": {
+   "REQUIRES": "shaderType vertexshaderart",
+   "NAME": "Number of vertices",
+   "DESCRIPTION": "Set the number of vertices to render in vertexshaderart shaders",
+   "TYPE": "SLIDER 1 10000"
+  },
+  "renderMode": {
+   "DESCRIPTION": "OpenGl rendering mode for shader",
+   "TYPE": "DROPDOWN POINTS LINES LINE_STRIP LINE_LOOP TRIANGLES TRIANGLE_STRIP TRIANGLE_FAN"
+  }
  }
 }
 
 
 class Main():
-
 	def __init__(self):
 		with open(os.path.join(getScriptDir(), "shadertoyTemplate.txt"), "r") as shaderFile:
 			shadersData = shaderFile.read().split("-----")
@@ -60,6 +50,10 @@ class Main():
 		# The context we will use for the shader
 		self.glCtx = moderngl.create_standalone_context()
 		self.glCtx.enable(moderngl.DEPTH_TEST)
+
+	def _change_var(self, variableName):
+		# TODO this needs to be written
+		return
 
 	def setShader(self, shader, shaderType, vertexNum):
 		self.shaderType = shaderType

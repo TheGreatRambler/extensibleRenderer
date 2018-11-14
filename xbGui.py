@@ -42,7 +42,7 @@ class MainFrame(wx.Frame):
 		self.icon = icon
 		self.viewingPanelSize = (400, 250)
 
-		self.mainSizer = wx.BoxSizer(wx.HORIZONTAL)
+		self.mainSizer = wx.BoxSizer(wx.VERTICAL)
 		#self.mainSizer.SetSizeHints(self)
 		self.SetSizer(self.mainSizer)
 
@@ -71,7 +71,7 @@ class MainFrame(wx.Frame):
 		self.SetMenuBar(menuBar)
 
 	def setupViewingPanel(self):
-		self.viewingPanelSizer = wx.BoxSizer(wx.VERTICAL)
+		self.viewingPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
 		self.viewingPanel = wx.Panel(parent=self, id=wx.ID_ANY)
 		self.SetAutoLayout(True)  # so that painting can go on uninterupted
 		self.viewingPanel.SetSizer(self.viewingPanelSizer)
@@ -80,7 +80,7 @@ class MainFrame(wx.Frame):
 		defaultImage = PIL.Image.open("resources/plugin-not-started.png")
 		self.setViewingPanelImage(defaultImage)
 
-		self.mainSizer.Add(self.viewingPanel, 1, wx.ALL, 0)
+		self.mainSizer.Add(self.viewingPanel, 1, wx.EXPAND, 0)
 
 	def openSetMenuPlugin(self, event):
 		self.mainSizer.Show(self.pluginSizer)
