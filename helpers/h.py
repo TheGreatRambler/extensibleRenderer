@@ -251,3 +251,18 @@ def fillEntirePanel(element, panel, padding=1):
 	sizer = wx.BoxSizer(wx.VERTICAL)
 	sizer.Add(element, 1, wx.EXPAND | wx.ALL, padding)
 	panel.SetSizer(sizer)
+
+def getValueOfControl(wxControl):
+	classType = type(wxControl)
+	valueToReturn = None
+	if classType == wx.FilePickerCtrl:
+		valueToReturn = open(wxControl.GetPath(), "r")
+	elif classType == wx.ComboBox:
+		# get the value of the selected dropdown value
+		valueToReturn = wxControl.GetString(wxControl.GetSelection())
+	elif classType == wx.Slider:
+		valueToReturn = wxControl.GetValue()
+	elif classType == wx.TextCtrl:
+		# get text of first line (only line in this case)
+		valueToReturn = wxControl.GetLineText(0)
+	return valueToReturn

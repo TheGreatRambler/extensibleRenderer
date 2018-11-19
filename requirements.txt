@@ -3,3 +3,4 @@ ModernGL
 Pillow
 wxPython
 dotmap
+python-resize-image

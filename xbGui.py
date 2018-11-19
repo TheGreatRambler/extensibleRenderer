@@ -3,6 +3,7 @@
 import wx
 import wx.adv
 import PIL.ImageChops  # from PIL
+from resizeimage import resizeimage
 
 import os
 import os.path
@@ -40,7 +41,7 @@ class MainFrame(wx.Frame):
 		self.appTaskBarIcon = TaskBarIcon(self, icon)  # mimimize to icon on taskbar
 		self.SetIcon(icon)
 		self.icon = icon
-		self.viewingPanelSize = (400, 250)
+		self.imageViewWidth = 400
 
 		self.mainSizer = wx.BoxSizer(wx.VERTICAL)
 		#self.mainSizer.SetSizeHints(self)
@@ -72,15 +73,12 @@ class MainFrame(wx.Frame):
 
 	def setupViewingPanel(self):
 		self.viewingPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
-		self.viewingPanel = wx.Panel(parent=self, id=wx.ID_ANY)
 		self.SetAutoLayout(True)  # so that painting can go on uninterupted
-		self.viewingPanel.SetSizer(self.viewingPanelSizer)
-		self.viewingPanel.SetSize(self.viewingPanelSize)
 
 		defaultImage = PIL.Image.open("resources/plugin-not-started.png")
 		self.setViewingPanelImage(defaultImage)
 
-		self.mainSizer.Add(self.viewingPanel, 1, wx.EXPAND, 0)
+		self.mainSizer.Add(self.viewingPanelSizer, 0, wx.EXPAND | wx.ALIGN_CENTER, 0)
 
 	def openSetMenuPlugin(self, event):
 		self.mainSizer.Show(self.pluginSizer)
@@ -112,14 +110,17 @@ class MainFrame(wx.Frame):
 			else:
 				self.lastPilImage.close() # pylint: disable=E0203
 		# only gets to this point if the image is not the same as last time
+		# resize image to width keeping aspect ratio
+		pilImage = resizeimage.resize_width(pilImage, self.imageViewWidth)
+		# make this the lastpilimage (ie current)
 		self.lastPilImage = pilImage
+		# create wximage from pil image
 		wxImg = wx.Image(*pilImage.size)
 		pilRgbStr = pilImage.convert("RGB").tobytes()  # no transparency supported
 		wxImg.SetData(pilRgbStr)
 		# resize to small image so it is not too big in the panel
 		# the 400 and 250 need to be changed if the panel needs to be resized
-		currentImage = wxImg.Scale(self.viewingPanelSize[0], self.viewingPanelSize[1],
-		                           wx.IMAGE_QUALITY_HIGH).ConvertToBitmap()
+		currentImage = wxImg.ConvertToBitmap()
 		dc = wx.MemoryDC(currentImage)
 		dc.DrawBitmap(currentImage, 0, 0)
 
@@ -127,7 +128,8 @@ class MainFrame(wx.Frame):
 		if len(self.viewingPanelSizer.GetChildren()) != 0:
 			# not first time adding it
 			self.viewingPanelSizer.Remove(self.lastViewingBitmap) # pylint: disable=E0203
-		self.viewingPanelSizer.Add(bitmapToAdd, 0, wx.ALL | wx.ALIGN_CENTER, 10)  # 10 is border
+		self.viewingPanelSizer.Add(bitmapToAdd, 0, wx.ALL, 10)  # 10 is border
+		self.Layout()
 		self.lastViewingBitmap = bitmapToAdd
 
 

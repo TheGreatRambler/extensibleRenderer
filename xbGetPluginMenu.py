@@ -135,10 +135,15 @@ class getPluginMenu(wx.BoxSizer):
 			self.refresh()
 
 	def setVariable(self, variableName, variableControl):
-		# run the function with the specified arguments
-		#getattr(self.currentPluginInstance, variableName) = variableControl
-		# create a helper function to get the value of the variable control
-		self.currentPluginInstance._change_var(variableName)  # notify the plugin
+		# gotta exist first
+		if self.currentPluginInstance is not None:
+			# get variable value with control
+			# returns open file object for files
+			# must be closed manually
+			variableValue = help.getValueOfControl(variableControl)
+			# set value directly on class
+			setattr(self.currentPluginInstance, variableName, variableValue)
+			self.currentPluginInstance._change_var(variableName)  # notify the plugin
 
 	def startPluginInstance(self, pluginToUse):
 		# start the darn instance!
