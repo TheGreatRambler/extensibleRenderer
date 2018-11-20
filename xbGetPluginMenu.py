@@ -4,6 +4,7 @@ import wx
 import wx.lib.scrolledpanel as scrolled
 # button supporting a background color
 import wx.lib.buttons as coolButtons
+from wx.lib.agw.infobar import AutoWrapStaticText
 
 import SETTINGS
 
@@ -79,7 +80,7 @@ class getPluginMenu(wx.BoxSizer):
 					# set background color
 					contentSizer.GetStaticBox().SetBackgroundColour(SETTINGS.theme.plugin_variable_background)
 
-					variableDescription = wx.StaticText(parent=contentPanel, label=variableDescription)
+					variableDescription = AutoWrapStaticText(parent=contentPanel, label=variableDescription)
 					contentSizer.Add(variableDescription, 1, wx.ALIGN_CENTER | wx.EXPAND)
 
 					variableControl = self.processArgumentNotation(variable, contentPanel)

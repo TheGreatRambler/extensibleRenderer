@@ -41,7 +41,7 @@ class MainFrame(wx.Frame):
 		self.appTaskBarIcon = TaskBarIcon(self, icon)  # mimimize to icon on taskbar
 		self.SetIcon(icon)
 		self.icon = icon
-		self.imageViewWidth = 400
+		self.imageViewWidth = 550
 
 		self.mainSizer = wx.BoxSizer(wx.VERTICAL)
 		#self.mainSizer.SetSizeHints(self)
@@ -57,6 +57,8 @@ class MainFrame(wx.Frame):
 		self.setupViewingPanel()
 		self.getPluginMenu()
 		self.setupMenuBar()
+
+		self.openSetMenuPlugin(None) # start open automatically, event is just None
 
 	def setupMenuBar(self):
 		menuBar = wx.MenuBar()
@@ -77,6 +79,10 @@ class MainFrame(wx.Frame):
 
 		defaultImage = PIL.Image.open("resources/plugin-not-started.png")
 		self.setViewingPanelImage(defaultImage)
+
+		self.timeViewerSlider = wx.Slider(parent=self, style=wx.SL_LABELS | wx.SL_RIGHT)
+
+		self.viewingPanelSizer.Insert(1, self.timeViewerSlider, 0, wx.EXPAND, 10) # 1 is index, 10 is border
 
 		self.mainSizer.Add(self.viewingPanelSizer, 0, wx.EXPAND | wx.ALIGN_CENTER, 0)
 
@@ -128,7 +134,7 @@ class MainFrame(wx.Frame):
 		if len(self.viewingPanelSizer.GetChildren()) != 0:
 			# not first time adding it
 			self.viewingPanelSizer.Remove(self.lastViewingBitmap) # pylint: disable=E0203
-		self.viewingPanelSizer.Add(bitmapToAdd, 0, wx.ALL, 10)  # 10 is border
+		self.viewingPanelSizer.Insert(0, bitmapToAdd, 0, wx.ALL, 10)  # first 0 is index, 10 is border
 		self.Layout()
 		self.lastViewingBitmap = bitmapToAdd
 
