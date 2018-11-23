@@ -5,6 +5,7 @@ import wx.lib.scrolledpanel as scrolled
 # button supporting a background color
 import wx.lib.buttons as coolButtons
 from wx.lib.agw.infobar import AutoWrapStaticText
+import spectra
 
 import SETTINGS
 
@@ -117,8 +118,7 @@ class getPluginMenu(wx.BoxSizer):
 			else:
 				target = root
 
-			pluginTreeItem = tree.AppendItem(target,
-			                                 plugin.PLUGIN_SETTINGS.get("NAME") or plugin.B_V["FILE_NAME"])
+			pluginTreeItem = tree.AppendItem(target, plugin.PLUGIN_SETTINGS.get("NAME") or plugin.B_V["FILE_NAME"])
 			tree.SetItemData(pluginTreeItem, plugin)  # set the data returned by event.getdata()
 		tree.Expand(root)
 
@@ -149,10 +149,13 @@ class getPluginMenu(wx.BoxSizer):
 	def startPluginInstance(self, pluginToUse):
 		# start the darn instance!
 		self.currentPluginInstance = pluginToUse.Main()
+		self.currentPluginInstance.setResolution(*SETTINGS.render.default_resolution) # unpack
+		self.currentPluginInstance.setTime(0) # set to 0 milliseconds
 
 	def endPluginInstance(self):
 		# kill current instance if it exists
 		if self.currentPluginInstance:
+			self.currentPluginInstance.onDelete() # call the delete function
 			del self.currentPluginInstance
 			self.currentPluginInstance = None
 
@@ -185,6 +188,11 @@ class getPluginMenu(wx.BoxSizer):
 					maxValue = int(typeArguments[1])
 				elementToReturn = wx.Slider(
 				 parent=parent, minValue=minValue, maxValue=maxValue, style=wx.SL_LABELS)
+			elif typeOfElement == "COLOR":
+				if len(typeArguments) == 0:
+					elementToReturn = wx.ColourPickerCtrl(parent=parent)
+				else:
+					elementToReturn = wx.ColourPickerCtrl(parent=parent, colour=wx.Colour(*spectra.html(typeArguments[0]).rgb))
 			elif typeOfElement == "TEXT":
 				if len(typeArguments) == 0:
 					elementToReturn = wx.TextCtrl(parent=parent, value="")

@@ -4,3 +4,5 @@ Pillow
 wxPython
 dotmap
 python-resize-image
+pexpect
+spectra

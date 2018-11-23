@@ -265,4 +265,17 @@ def getValueOfControl(wxControl):
 	elif classType == wx.TextCtrl:
 		# get text of first line (only line in this case)
 		valueToReturn = wxControl.GetLineText(0)
+	elif classType == wx.ColourPickerCtrl:
+		# return as rgb tuple
+		valueToReturn = wxControl.GetColour().Get(includeAlpha=False)
 	return valueToReturn
+
+class onWriteMemoryFile():
+	# a simple class that creates a "file object" that calls a callback when lines are written
+	def __init__(self, callback):
+		self.callback = callback
+	def write(self, s):
+		self.callback(s)
+	def flush(self):
+		# not needed
+		pass
