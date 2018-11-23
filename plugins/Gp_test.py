@@ -48,7 +48,7 @@ class Main():
 		self.canvasInstance.expect_exact("next")
 
 	def onCommandWrite(self, line):
-		if len(line) !== 0:
+		if len(line) != 0:
 			print(len(line))
 	
 	def renderNextFrame(self, delta):
