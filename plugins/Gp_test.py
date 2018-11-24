@@ -1,6 +1,8 @@
 from PIL import Image
 import pexpect
 import pexpect.popen_spawn
+import lz4
+import requests
 
 import subprocess
 import os
@@ -27,10 +29,11 @@ PLUGIN_SETTINGS = {
 class Main():
 	def __init__(self):
 		self.mainColor = None # init it
+		self.dataFromJavascript = None
 		# cross platform version of pexpect
 		javascriptFileCommand = "node " + os.path.join(os.path.dirname(os.path.realpath(__file__)), "dwitter", "main.js")
 		self.inMemoryLogHistory = onWriteMemoryFile(self.onCommandWrite) # simple on-write memory object
-		self.canvasInstance = pexpect.popen_spawn.PopenSpawn(cmd=javascriptFileCommand, encoding="utf8", logfile=self.inMemoryLogHistory)
+		self.canvasInstance = pexpect.popen_spawn.PopenSpawn(cmd=javascriptFileCommand, logfile=self.inMemoryLogHistory)
 		# listen for start (blocking)
 		self.canvasInstance.expect_exact("started")
 		# send command to set to beginning
@@ -43,13 +46,13 @@ class Main():
 
 	def _change_var(self, variableName):
 		self.canvasInstance.sendline("render")
-		self.canvasInstance.expect(".*") # expect any data
-		# will appear from logfile
+		# when next appears, the rendering has finished
 		self.canvasInstance.expect_exact("next")
+		# listen on server to find the data
 
 	def onCommandWrite(self, line):
-		if len(line) != 0:
-			print(len(line))
+		if line.startswith("D"):
+			self.dataFromJavascript = line
 	
 	def renderNextFrame(self, delta):
 		pass

@@ -274,8 +274,14 @@ class onWriteMemoryFile():
 	# a simple class that creates a "file object" that calls a callback when lines are written
 	def __init__(self, callback):
 		self.callback = callback
+		self.currentBytesArray = bytearray()
 	def write(self, s):
-		self.callback(s)
+		if len(s) != 0:
+			self.currentBytesArray.extend(s)
+			# if the buffer ends a line
+			if (self.currentBytesArray.decode()[-1] == "\n"):
+				self.callback(self.currentBytesArray[:-1].decode(encoding="utf-8"))
+				self.currentBytesArray = bytearray() # clear
 	def flush(self):
 		# not needed
 		pass
