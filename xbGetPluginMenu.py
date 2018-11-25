@@ -6,8 +6,10 @@ import wx.lib.scrolledpanel as scrolled
 import wx.lib.buttons as coolButtons
 from wx.lib.agw.infobar import AutoWrapStaticText
 import spectra
+import asyncio
 
 import SETTINGS
+import xbRenderingProcess
 
 import helpers.h as help
 

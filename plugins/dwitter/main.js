@@ -6,6 +6,7 @@ const typedToBuffer = require("typedarray-to-buffer")
 const http = require("http");
 const lzFour = require("lz4js");
 const findFreePort = require("find-free-port");
+const ip = require("ip");
 
 
 // canvas always the same size
@@ -22,6 +23,8 @@ var vmScript;
 var vmContext
 
 var largeDataPort;
+
+var currentDweetNum;
 
 var serverAccessableData = {
 	"dweetFile": undefined
@@ -42,7 +45,7 @@ var largeDataServer = http.createServer(function (request, response) {
 
 function setupCanvasCtx() {
 	return new Promise(function (resolve, reject) {
-		getDweetCode().then(function (code) {
+		getDweetCode(currentDweetNum).then(function (code) {
 			vmSandbox = {
 				S: Math.sin,
 				C: Math.cos,
@@ -64,9 +67,9 @@ function setupCanvasCtx() {
 	});
 }
 
-function getDweetCode() {
+function getDweetCode(dweetNum) {
 	return new Promise(function (resolve, reject) {
-		request("https://www.dwitter.net/api/dweets/701/", function (error, response, body) {
+		request("https://www.dwitter.net/api/dweets/" + dweetNum + "/", function (error, response, body) {
 			var code = JSON.parse(body).code;
 			resolve(code);
 		});
@@ -77,35 +80,37 @@ function setup() {
 	return new Promise(function (resolve, reject) {
 		findFreePort(3000, function (err, freePort) {
 			largeDataPort = freePort;
-			setupCanvasCtx().then(function () {
-				// signal python script that we are started
-				console.log("started");
+			// signal python script that we are started
+			console.log("started");
 
-				// instance to listen to command line
-				const rl = readline.createInterface({
-					input: process.stdin,
-					output: process.stdout
-				});
-
-				rl.on("line", function (line) {
-					var data = line.split(" ")[1];
-					switch (line.split(" ")[0]) {
-						// choose based on command
-						case "time":
-							currentMillisecondTime = Number(data);
-							break;
-						case "render":
-							renderAndPrint();
-							break;
-						case "port":
-							console.log(largeDataPort);
-							break;
-					}
-					console.log("next");
-				});
-				// start server
-				largeDataServer.listen(largeDataPort);
+			// instance to listen to command line
+			const rl = readline.createInterface({
+				input: process.stdin,
+				output: process.stdout
 			});
+
+			rl.on("line", async function (line) {
+				var data = line.split(" ")[1];
+				switch (line.split(" ")[0]) {
+					// choose based on command
+					case "time":
+						currentMillisecondTime = Number(data);
+						break;
+					case "render":
+						renderAndPrint();
+						break;
+					case "address":
+						returnAddress();
+						break;
+					case "setDweet":
+						currentDweetNum = Number(data);
+						await setupCanvasCtx();
+						break;
+				}
+				console.log("next");
+			});
+			// start server
+			largeDataServer.listen(largeDataPort);
 		});
 	});
 }
@@ -131,6 +136,12 @@ function renderAndPrint() {
 	// implied by next
 	//console.log("done");
 }
+
+function returnAddress() {
+	console.log("D" + "http://" + ip.address() + ":" + largeDataPort);
+}
+
+setup();
 
 process.on("SIGTERM", function () {
 	// can do stuff

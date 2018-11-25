@@ -276,11 +276,15 @@ class onWriteMemoryFile():
 		self.callback = callback
 		self.currentBytesArray = bytearray()
 	def write(self, s):
+		# may be an empty bytearray
 		if len(s) != 0:
 			self.currentBytesArray.extend(s)
 			# if the buffer ends a line
 			if (self.currentBytesArray.decode()[-1] == "\n"):
-				self.callback(self.currentBytesArray[:-1].decode(encoding="utf-8"))
+				# there may be multiple lines in the buffer, suprisingly
+				for line in self.currentBytesArray.decode(encoding="utf-8").strip().splitlines():
+					print(line)
+					self.callback(line)
 				self.currentBytesArray = bytearray() # clear
 	def flush(self):
 		# not needed
