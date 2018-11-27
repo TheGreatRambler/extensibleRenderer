@@ -30,24 +30,28 @@ class renderingProcess(multiprocessing.Process):
 		while self.needsToStop is False:
 			# look at the task queue and see what needs to be done
 			# removes task from queue
-			data = self.taskQueue.get()
-			instruction = data[0]
-			if instruction == "setPlugin":
-				self._setPlugin(data[1]) # pass plugin object, maybe?
-			elif instruction == "endPlugin":
-				self._endPlugin()
-			elif instruction == "setResolution":
-				self._setResolution(data[1], data[2])
-			elif instruction == "setTime":
-				self._setTime(data[1])
-			elif instruction == "setValue":
-				self._setValue(data[1], data[2])
-			elif instruction == "render":
-				self._render()
-			elif instruction == "SHUTDOWN":
-				self._clearAllQueues()
-				# simply break the while loop
-				break
+			try:
+				data = self.taskQueue.get_nowait()
+				instruction = data[0]
+				if instruction == "setPlugin":
+					self._setPlugin(data[1]) # pass plugin object, maybe?
+				elif instruction == "endPlugin":
+					self._endPlugin()
+				elif instruction == "setResolution":
+					self._setResolution(data[1], data[2])
+				elif instruction == "setTime":
+					self._setTime(data[1])
+				elif instruction == "setValue":
+					self._setValue(data[1], data[2])
+				elif instruction == "render":
+					self._render()
+				elif instruction == "SHUTDOWN":
+					self._clearAllQueues()
+					# simply break the while loop
+					break
+			except queue.Empty:
+				# no items to read yet
+				pass
 	
 	# external functions (as in, will be indirectly called by an outside thread)
 	def _getAllPluginSettings(self):
@@ -142,7 +146,7 @@ class renderInterface():
 		asyncio.run(self.startPolling())
 
 	async def startPolling(self):
-		while needsToStop is False:
+		while self.needsToStop is False:
 			try:
 				immidiateResult = self.resultQueue.get_nowait()
 				# process result
