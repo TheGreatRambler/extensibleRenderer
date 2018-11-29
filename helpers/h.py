@@ -11,6 +11,7 @@ import configparser
 import codecs
 import helpers.h
 import wx
+import array
 
 
 def is_running(process):
@@ -281,7 +282,7 @@ class onWriteMemoryFile():
 			self.currentBytesArray.extend(s)
 			# if the buffer ends a line
 			if (self.currentBytesArray.decode()[-1] == "\n"):
-				# there may be multiple lines in the buffer, suprisingly
+				# there may be multiple lines in the buffer, surprisingly
 				for line in self.currentBytesArray.decode(encoding="utf-8").strip().splitlines():
 					print(line)
 					self.callback(line)
@@ -289,3 +290,46 @@ class onWriteMemoryFile():
 	def flush(self):
 		# not needed
 		pass
+
+def elegantPair(x, y):
+	# https://codepen.io/sachmata/post/elegant-pairing
+	if x >= y:
+		return x * x + x + y
+	else:
+		return y * y + x
+
+def elegantUnpair(z):
+	# https://codepen.io/sachmata/post/elegant-pairing
+	sqrtz = math.floor(math.sqrt(z))
+	sqz = sqrtz * sqrtz
+	if (z - sqz) >= sqrtz:
+		return [sqrtz, z - sqz - sqrtz]
+	else:
+		return [z - sqz, sqrtz]
+
+def fastRound(float):
+	TOLERANCE = 5
+	p = 10 ** TOLERANCE
+	return int(float * p + 0.5) / p
+
+def getListOfAssignmentsForCores(numOfCores, millisecondRanges, millisecondSkip):
+	currentCoreAssignment = 0
+	isSet = array.array("H") # unsigned short array, will be set to 1 if the element has been assigned
+	assignmentArray = array.array("L") # unsigned long array, might need to be long long (Q)
+	for rangeNum in range(0, math.floor(len(millisecondRanges) / 2)): # will get the number of ranges
+		# get the start and end of each range
+		millStart = millisecondRanges[rangeNum * 2]
+		millEnd = millisecondRanges[rangeNum * 2 + 1]
+		for millisecond in range(millStart, millEnd):
+			try:
+				unneeded = isSet[millisecond]
+			except IndexError:
+				# does not exist
+				# append paired to save space
+				assignmentArray.append(elegantPair(millisecond, currentCoreAssignment))
+				if currentCoreAssignment == (numOfCores - 1):
+					# this is the last core, loop around
+					currentCoreAssignment = 0
+				else:
+					currentCoreAssignment += 1
+	return assignmentArray

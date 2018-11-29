@@ -26,9 +26,9 @@ def getNumCores():
 	cpu_count = None
 	if hasattr(os, "sched_getaffinity"):
 		# https://stackoverflow.com/a/25636145/9329945
-        	cpu_count = len(os.sched_getaffinity(0))
-    	else:
-        	cpu_count = os.cpu_count()
+		cpu_count = len(os.sched_getaffinity(0))
+	else:
+		cpu_count = os.cpu_count()
 	# if still none, make default value
 	if cpu_count is None:
 		# sensible default
@@ -43,10 +43,11 @@ def cli():
 	pass
 
 @cli.command()
-@click.option("-i", "--input-plugin", "inputPlugin", type=click.STRING, required=False)
+@click.option("-i", "--input-plugin", "inputPlugin", type=click.STRING, required=True)
 @click.option("-o", "--output-plugin", "outputPlugin", type=click.STRING, required=False)
-@click.option("-p", "--processes", "processes", type=click.STRING, required=False, default=getNumCores())
-def render(inputPlugin, outputPlugin, processes):
+@click.option("-p", "--processes", "processes", type=int, required=False, default=getNumCores())
+@click.option("-f", "--fps", "fps", type=int, required=False, default=60) # not a shabby speed
+def render(inputPlugin, outputPlugin, processes, fps):
 	pass
 
 @cli.command()

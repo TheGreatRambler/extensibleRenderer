@@ -6,6 +6,8 @@ import os
 import importlib
 import asyncio
 import queue
+import helpers.h
+import array
 
 # experimental implementation that is on a different process
 
@@ -130,7 +132,7 @@ class renderingProcess(multiprocess.Process):
 					"FILE_NAME": os.path.basename(thisPlugin.__file__),
 					"FILE_DIR": os.path.dirname(thisPlugin.__file__),
 					"FILE_PATH": thisPlugin.__file__
-				}
+				};
 				thePlugins[plugin] = thisPlugin
 		return thePlugins
 
@@ -212,3 +214,37 @@ class renderInterface():
 		self.renderProcess.join()
 		# returns the results, so the main program can deal with them
 		return self.allResults
+
+def createMultiCoreInterface():
+	pluginInterfaces = []
+	processesMillisecondsAssigned = []
+
+	coreNum = None
+	pluginName = None
+	def __init__(self, coreNum, millisecondRanges, pluginName, fps):
+		self.coreNum = coreNum
+		self.pluginName = pluginName
+		# runs function async in background
+		for i in range(0, coreNum):
+			self.pluginInterfaces.append(renderInterface())
+			# unsigned long should be fine
+			self.processesMillisecondsAssigned.append(array.array("L"))
+		# the assignments for the cores
+		# also, round fast because we have to do this a lot, also means that the fps is not perfect
+		millisecondDelay = helpers.h.fastRound(1000 / fps)
+		assignments = helpers.h.getListOfAssignmentsForCores(coreNum, millisecondRanges, millisecondDelay)
+		for pair in assignments:
+			# unpair first
+			millisecond, coreNum = helpers.h.elegantUnpair(pair)
+			# assign the millisecond to the process
+			processesMillisecondsAssigned[coreNum].append(millisecond)
+	def start(self):
+		for coreNum in range(0, self.coreNum):
+			thisRenderInterface = self.pluginInterfaces[coreNum]
+			# set plugin
+			thisRenderInterface.pluginSetPlugin(self.pluginName)
+			millisecondsToAssign = self.processesMillisecondsAssigned[coreNum]
+			for millisecond in millisecondsToAssign:
+				# assign instructions to render for each process
+				thisRenderInterface.pluginSetTime(millisecond)
+				thisRenderInterface.pluginRender()
