@@ -3,6 +3,7 @@ import click
 import yaml
 import signal
 import sys
+import os
 
 import xbRenderingProcess as xb
 
@@ -21,34 +22,50 @@ def setVersionGraphic():
 	VERSION_MESSAGE = VERSION_GRAPHIC + "\n" + VERSION + " " + COPYRIGHT
 setVersionGraphic()
 
+def getNumCores():
+	cpu_count = None
+	if hasattr(os, "sched_getaffinity"):
+		# https://stackoverflow.com/a/25636145/9329945
+        	cpu_count = len(os.sched_getaffinity(0))
+    	else:
+        	cpu_count = os.cpu_count()
+	# if still none, make default value
+	if cpu_count is None:
+		# sensible default
+		cpu_count = 4
+	return cpu_count
+	
+	
+
 @click.group()
 @click.version_option(version=VERSION, message=VERSION_MESSAGE)
 def cli():
 	pass
 
 @cli.command()
-@click.option("-i", "--input-plugin", "i", type=click.STRING, required=True)
-@click.option("-o", "--output-plugin", "o", type=click.STRING, required=True)
-def render(i, o):
+@click.option("-i", "--input-plugin", "inputPlugin", type=click.STRING, required=False)
+@click.option("-o", "--output-plugin", "outputPlugin", type=click.STRING, required=False)
+@click.option("-p", "--processes", "processes", type=click.STRING, required=False, default=getNumCores())
+def render(inputPlugin, outputPlugin, processes):
 	pass
 
 @cli.command()
-@click.option("-i", "--input-plugin", "i", type=click.STRING, required=False)
-@click.option("-o", "--output-plugin", "o", type=click.STRING, required=False)
-def info(i, o):
+@click.option("-i", "--input-plugin", "inputPlugin", type=click.STRING, required=False)
+@click.option("-o", "--output-plugin", "outputPlugin", type=click.STRING, required=False)
+def info(inputPlugin, outputPlugin):
 	# print info about plugins and exit
 	# print info for each plugin and be done
 	# creates a quick instance
 	instance = xb.renderInterface()
-	if i is not None:
+	if inputPlugin is not None:
 		# don't create instance
-		instance.pluginSetPlugin(i, False)
+		instance.pluginSetPlugin(inputPlugin, False)
 		instance.getPluginInfo()
 		allResults = instance.stop()
 		# prints the last element in the return array, which is the PLUGIN_SETTINGS dict
 		# yaml makes pretty printing, only reason
 		print("\n" + yaml.dump(allResults[-1], indent=4, default_flow_style=False))
-	# o not yet supported
+	# outputPlugin not yet supported
 
 
 def setupClickFunctions():
