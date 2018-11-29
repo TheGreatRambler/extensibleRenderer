@@ -1,15 +1,19 @@
-import multiprocessing
+# pylint: disable=E1101
+# not the built-in python module
+import multiprocess
+
 import os
 import importlib
 import asyncio
 import queue
 
-# experimental implementation that is on a different thread
+# experimental implementation that is on a different process
 
 
 # there is no checking to make sure the plugin has started, so start beforehand
-# thread implementation from https://pymotw.com/2/multiprocessing/communication.html
-class renderingProcess(multiprocessing.Process):
+# process implementation from https://pymotw.com/2/multiprocessing/communication.html
+# process is entirely synchronous, but multiple instances are created, 1 per logical core
+class renderingProcess(multiprocess.Process):
 	currentPlugin = None
 	currentPluginClass = None
 	allPossiblePlugins = None
@@ -22,19 +26,28 @@ class renderingProcess(multiprocessing.Process):
 		super().__init__()
 		self.taskQueue = task_queue
 		self.resultQueue = result_queue
+		self.currentTaskGroup = []
 
 		self.allPossiblePlugins = self._getAllPossiblePlugins()
 
 	# inherited from multiprocessing.Process
 	def run(self):
-		while self.needsToStop is False:
+		while True:
 			# look at the task queue and see what needs to be done
 			# removes task from queue
 			try:
 				data = self.taskQueue.get_nowait()
-				instruction = data[0]
+				# have instructions!
+				self.haveInstructionsToProcess = True
+				instruction = None
+				if type(data) == str:
+					instruction = data
+				else:
+					instruction = data[0]
+				# there is no other data if the datatype is not a tuple
 				if instruction == "setPlugin":
-					self._setPlugin(data[1]) # pass plugin object, maybe?
+					# last argument is whether to create a class instance or not
+					self._setPlugin(data[1], data[2])
 				elif instruction == "endPlugin":
 					self._endPlugin()
 				elif instruction == "setResolution":
@@ -45,13 +58,17 @@ class renderingProcess(multiprocessing.Process):
 					self._setValue(data[1], data[2])
 				elif instruction == "render":
 					self._render()
+				elif instruction == "getInfo":
+					self._getInfo()
 				elif instruction == "SHUTDOWN":
-					self._clearAllQueues()
-					# simply break the while loop
-					break
+					self._stop()
+					# breaking the while loop is handled by _stop
 			except queue.Empty:
-				# no items to read yet
-				pass
+				# no items to read anymore
+				if self.needsToStop:
+					# best time to say goodbye
+					self._return("DONE")
+					break
 	
 	# external functions (as in, will be indirectly called by an outside thread)
 	def _getAllPluginSettings(self):
@@ -62,13 +79,15 @@ class renderingProcess(multiprocessing.Process):
 		self._return(pluginSettings)
 
 	# functions pertaining to the current plugin
-	def _setPlugin(self, pluginName):
+	def _setPlugin(self, pluginName, wantInstance):
 		# plugin name will be the filename without ".py"
 		if self.currentPlugin is not None:
 			self.endPlugin()
 		self.currentPluginClass = self.allPossiblePlugins[pluginName]
-		# may take a long time in some cases
-		self.currentPlugin = self.allPossiblePlugins[pluginName].Main()
+		if wantInstance:
+			# this makes sense when only the info is desired from the class
+			# may take a long time in some cases
+			self.currentPlugin = self.allPossiblePlugins[pluginName].Main()
 
 	def _endPlugin(self):
 		if self.currentPlugin is not None:
@@ -89,6 +108,10 @@ class renderingProcess(multiprocessing.Process):
 	def _render(self):
 		imageRender = self.currentPlugin.getImage()
 		self._return(imageRender)
+
+	def _getInfo(self):
+		# returns all plugin settings as dict
+		self._return(self.currentPluginClass.PLUGIN_SETTINGS)
 
 	# internal functions
 	def _return(self, value):
@@ -111,55 +134,81 @@ class renderingProcess(multiprocessing.Process):
 				thePlugins[plugin] = thisPlugin
 		return thePlugins
 
-	def _clearAllQueues(self):
-		# signal that both queues will be closed after all items are removed
-		self.taskQueue.close()
-		self.resultQueue.close()
-		# prevent queues from waiting for background thread
-		#self.instructionQueue.cancel_join_thread()
-		#self.resultQueue.cancel_join_thread()
-		try:
-			while True:
-				self.taskQueue.get_nowait()
-		except queue.Empty:
-			try:
-				while True:
-					self.resultQueue.get_nowait()
-			except queue.Empty:
-				# end the function after all items are removed from both queues
-				pass
+	def _stop(self):
+		# all that is needed: now the process will stop on its own
+		self.needsToStop = True
 
+# the main class to be created
+# should be called with asyncio, because it polls async
 class renderInterface():
-	needsToStop = False
+	resultQueueEmpty = False
 
 	instructionQueue = None
 	resultQueue = None
 
+	allResults = None
+
 	renderProcess = None
 	def __init__(self):
-		self.instructionQueue = multiprocessing.Queue()
-		self.resultQueue = multiprocessing.Queue()
+		self.instructionQueue = multiprocess.Queue()
+		self.resultQueue = multiprocess.Queue()
+		self.allResults = []
 
+		# returns a multiprocessing.Process
 		self.renderProcess = renderingProcess(self.instructionQueue, self.resultQueue)
 		self.renderProcess.start()
 
-		asyncio.run(self.startPolling())
+		# runs function async in background
+		self.loop = asyncio.get_event_loop()
+		# the task itself to create, starts automatically
+		self.pollTask = self.loop.create_task(self.startPolling())
 
 	async def startPolling(self):
-		while self.needsToStop is False:
+		# this will continue to run while results exist in the result queue
+		while True:
 			try:
 				immidiateResult = self.resultQueue.get_nowait()
-				# process result
+				# add to internal buffer and process later
+				if immidiateResult == "DONE":
+					# time to end, so quit
+					break
+				else:
+					# it is okay, keep appending
+					self.allResults.append(immidiateResult)
 			except queue.Empty:
 				# no items to read yet
 				pass
 
+	def pluginSetPlugin(self, pluginName, wantInstance=True):
+		self.rawInstruction(("setPlugin", pluginName, wantInstance))
+
+	def pluginEndPlugin(self):
+		self.rawInstruction("endPlugin")
+
+	def pluginSetResolution(self, width, height):
+		self.rawInstruction(("setResolution", width, height))
+
+	def pluginSetTime(self, timeInMilliseconds):
+		self.rawInstruction(("setTime", timeInMilliseconds))
+
+	def pluginSetValue(self, valueName, value):
+		self.rawInstruction(("setValue", valueName, value))
+
+	def pluginRender(self):
+		self.rawInstruction("render")
+		
+	def rawInstruction(self, instruction):
+		self.instructionQueue.put_nowait(instruction)
+
+	def getPluginInfo(self):
+		self.rawInstruction("getInfo")
+
 	def stop(self):
 		# send tuple with stop instruction
-		self.instructionQueue.put(("SHUTDOWN"))
-		self.needsToStop = True
-		# block until background process has finished
+		self.rawInstruction("SHUTDOWN")
+		# wait till all results are known to have been received, will block
+		self.loop.run_until_complete(self.pollTask)
+		# block until background process has finished, may already be done
 		self.renderProcess.join()
-
-
-
+		# returns the results, so the main program can deal with them
+		return self.allResults
