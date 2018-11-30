@@ -9,3 +9,5 @@ spectra
 click
 multiprocess
 pyyaml
+pywinauto
+mss

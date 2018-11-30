@@ -1,25 +1,35 @@
 import ctypes
-import pywinauto
-from pywinauto.application import pyWinAutoApp
-import mss
+from pywinauto.application import Application
+from mss import mss
+from PIL import Image
 
 class Main():
 	def __init__(self, command):
 		# open gui with command
-		self.appInstance = pyWinAutoApp(backend="win32").start(command)
-		# wait until started and visible
-		self.appInstance.wait("visible")
+		self.appInstance = Application(backend="win32").start(command)
 		# get the main/top window
 		self.mainWindow = self.appInstance.top_window()
-		# get screensize so window can be outside screen (TODO need to implement)
-		# just go for a massive value (last value is repaint ant 2 nones are width and height)
-		self.mainWindow.move_window(3000, 3000, None, None, False)
-		self.screenshotInstance = mss()
+		# wait until CPU usage is lower than 5%
+		self.appInstance.wait_cpu_usage_lower(threshold=5)
+		# get screen size so window can be outside screen (TODO need to implement)
+		# just go for a massive value (last value is repaint ant 2 Nones are width and height)
+		self.appLocation = [1800, 950]
+		self.mainWindow.move_window(self.appLocation[0], self.appLocation[1], None, None, False)
+		"""
 		screenClientRect = self.mainWindow.client_rect()
 		# gets client area (minus toolbars)
-		self.windowView = {"top": screenClientRect.top, "left": screenClientRect.left, "width": screenClientRect.width(), "height": screenClientRect.height()}
-	def getScreenshot():
-		# returns pil image
-		screenshot = self.screenshotInstance.grab(self.windowView)
-		return Image.frombytes("RGB", screenshot.size, screenshot.bgra, "raw", "BGRX")
+		self.windowView = {
+			"top": self.appLocation[1],
+			"left": self.appLocation[0],
+			"width": screenClientRect.width(),
+			"height": screenClientRect.height(),
+			"mon": 0
+		}
+		self.screenshotInstance = mss()
+		print(self.windowView)	
+		"""
+	def getScreenshot(self):
+		# returns pil image of main window
+		return self.mainWindow.capture_as_image()
 		
+Main("notepad.exe").getScreenshot().save("notepad.png")
