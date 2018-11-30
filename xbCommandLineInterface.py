@@ -53,7 +53,8 @@ def render(inputPlugin, outputPlugin, processes, fps):
 @cli.command()
 @click.option("-i", "--input-plugin", "inputPlugin", type=click.STRING, required=False)
 @click.option("-o", "--output-plugin", "outputPlugin", type=click.STRING, required=False)
-def info(inputPlugin, outputPlugin):
+@click.option("-j", "--json", "notPretty", required=False, is_flag=True, default=False)
+def info(inputPlugin, outputPlugin, notPretty):
 	# print info about plugins and exit
 	# print info for each plugin and be done
 	# creates a quick instance
@@ -65,7 +66,10 @@ def info(inputPlugin, outputPlugin):
 		allResults = instance.stop()
 		# prints the last element in the return array, which is the PLUGIN_SETTINGS dict
 		# yaml makes pretty printing, only reason
-		print("\n" + yaml.dump(allResults[-1], indent=4, default_flow_style=False))
+		if notPretty is not True:
+			click.echo("\n" + yaml.dump(allResults[-1], indent=4, default_flow_style=False))
+		else:
+			click.echo(allResults[-1])
 	# outputPlugin not yet supported
 
 

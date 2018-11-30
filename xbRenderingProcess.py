@@ -248,3 +248,6 @@ def createMultiCoreInterface():
 				# assign instructions to render for each process
 				thisRenderInterface.pluginSetTime(millisecond)
 				thisRenderInterface.pluginRender()
+	def waitForEnd():
+		# TODO
+		pass

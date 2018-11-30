@@ -12,6 +12,7 @@ import codecs
 import helpers.h
 import wx
 import array
+from math import sqrt
 
 
 def is_running(process):
@@ -291,6 +292,10 @@ class onWriteMemoryFile():
 		# not needed
 		pass
 
+def fastFloor(float):
+	# works for positive numbers only
+	return int(float)
+
 def elegantPair(x, y):
 	# https://codepen.io/sachmata/post/elegant-pairing
 	if x >= y:
@@ -300,33 +305,39 @@ def elegantPair(x, y):
 
 def elegantUnpair(z):
 	# https://codepen.io/sachmata/post/elegant-pairing
-	sqrtz = math.floor(math.sqrt(z))
+	sqrtz = fastFloor(sqrt(z))
 	sqz = sqrtz * sqrtz
 	if (z - sqz) >= sqrtz:
 		return [sqrtz, z - sqz - sqrtz]
 	else:
 		return [z - sqz, sqrtz]
 
-def fastRound(float):
-	TOLERANCE = 5
-	p = 10 ** TOLERANCE
-	return int(float * p + 0.5) / p
+def setIndex(array, index, value, padValue):
+	# pads the array so indices beyond the length can be set
+	arrayLength = len(array)
+	if index > arrayLength:
+		for i in range(0, index - arrayLength):
+			array.append(padValue)
+	array[index] = value
+
 
 def getListOfAssignmentsForCores(numOfCores, millisecondRanges, millisecondSkip):
 	currentCoreAssignment = 0
+	# might use char array if it works
 	isSet = array.array("H") # unsigned short array, will be set to 1 if the element has been assigned
 	assignmentArray = array.array("L") # unsigned long array, might need to be long long (Q)
-	for rangeNum in range(0, math.floor(len(millisecondRanges) / 2)): # will get the number of ranges
+	for rangeNum in range(0, fastFloor(len(millisecondRanges) / 2)): # will get the number of ranges
 		# get the start and end of each range
 		millStart = millisecondRanges[rangeNum * 2]
 		millEnd = millisecondRanges[rangeNum * 2 + 1]
 		for millisecond in range(millStart, millEnd):
-			try:
-				unneeded = isSet[millisecond]
-			except IndexError:
-				# does not exist
+			# 1 is alias for true
+			if millisecond <= len(isSet) and isSet[millisecond] == 1:
+				# the millisecond has already been set
 				# append paired to save space
 				assignmentArray.append(elegantPair(millisecond, currentCoreAssignment))
+				# now exists, so this must change
+				setIndex(isSet, millisecond, 1, 0)
 				if currentCoreAssignment == (numOfCores - 1):
 					# this is the last core, loop around
 					currentCoreAssignment = 0
