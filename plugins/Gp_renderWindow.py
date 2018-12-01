@@ -15,6 +15,7 @@ import time
 
 class Main():
 	# may need launch4j or jar2exe for jar files
+	# if apps are reported as not having windows... good luck!
 	def __init__(self, command):
 		# we don't want cruft
 		pywinauto.actionlogger.disable()
