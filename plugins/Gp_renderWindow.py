@@ -1,10 +1,13 @@
 import win32gui
 import win32ui
+import keyboard
 import ctypes
 import pywinauto
 from pywinauto.application import Application
 from PIL import Image
-
+import subprocess
+import os
+import time
 # windows only solution
 # the way to get all applications (including jars and programs that start through the command line) is
 # by starting cmd.exe with this then manually putting in the command needed, listen for further windows,
@@ -15,10 +18,14 @@ class Main():
 	def __init__(self, command):
 		# we don't want cruft
 		pywinauto.actionlogger.disable()
-		# open gui with command
-		self.appInstance = Application(backend="win32").start(command)
+		# call command separately of pywinauto (redirection to DEVNULL prevents output)
+		self.DEVNULL = open(os.devnull, 'w')
+		self.process = subprocess.Popen(command, stdout=self.DEVNULL)
+		# try alt-enter
+		self.simulateAltEnter()
+		# open command window with existing command's PID
+		self.appInstance = Application(backend="win32").connect(process=self.process.pid)
 		# get the main/top window
-		# might have to get out of fullscreen, alt-enter is good for this
 		self.mainWindow = self.appInstance.top_window()
 		# wait until the main window is active (maybe it should be enabled)
 		self.mainWindow.wait("enabled")
@@ -59,7 +66,15 @@ class Main():
 		self.mfcDC.DeleteDC()
 		win32gui.ReleaseDC(self.hwnd, self.hwndDC)
 
-	def closeApplication(self):
-		pass
+	def kill(self):
+		self.breakdownScreenshotBitmap()
+		# kills given the pid
+		subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=self.process.pid), stdout=self.DEVNULL)
+
+	def simulateAltEnter(self):
+		keyboard.send("alt+enter")
 		
-Main(r"notepad.exe").getScreenshot().save("thing.png")
+instance = Main(r"C:\Users\aehar\Desktop\Windows\GreekWarSaver.exe")
+instance.getScreenshot().save("thing1.png")
+instance.getScreenshot().save("thing2.png")
+instance.kill()

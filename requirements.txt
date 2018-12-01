@@ -10,3 +10,4 @@ click
 multiprocess
 pyyaml
 pywinauto
+keyboard
