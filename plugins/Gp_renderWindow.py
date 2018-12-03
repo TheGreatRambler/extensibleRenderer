@@ -22,11 +22,6 @@ class Main():
 		# setup the application
 		# Output will say wether it failed or succeeded
 		applicationCreated = self.makeWorkingAppInstance(command)
-		# get the main/top window
-		# if application instance was not created, use the Desktop api
-		self.getMainWindow(command, applicationCreated)
-		# wait until the main window is active (maybe it should be enabled)
-		self.mainWindow.wait("visible")
 		# get screen size so window can be outside screen (TODO need to implement)
 		# just go for a massive value (last value is repaint ant 2 Nones are width and height)
 		self.appLocation = [3000, 3000]
@@ -89,59 +84,36 @@ class Main():
 	def makeWorkingAppInstance(self, commandList):
 		# helper pipe to flush popen
 		self.DEVNULL = open(os.devnull, 'w')
+		# get the hwnds of windows now
+		desktopInstance = Desktop(backend="win32")
+		hwnds = []
+		for window in desktopInstance.windows():
+			# get the hwnd as an int
+			hwnds.append(int(window.handle))
 		# start the instance now
 		# sill be used many times throughout this function
-		self.appInstance = Application(backend="win32")
+		appInstance = Application(backend="win32")
 		# first things first, lets try to create one from scratch
 		self.pid = subprocess.Popen(commandList, stdout=self.DEVNULL).pid
-		self.appInstance.connect(process=self.pid)
-		if len(self.appInstance.windows()) != 0:
+		appInstance.connect(process=self.pid)
+		if len(appInstance.windows()) != 0:
 			# the app we created has some windows, we are done
 			self.usedExisting = True
+			self.mainWindow = appInstance.top_window()
+			self.mainWindow.wait("enabled")
 			# It worked
 			return True
 		else:
-			# We have to connect to an existing one
-			# kill the one we created, it is pointless
-			self.killPid(self.pid)
-			# find possible processes to use
-			possibleProcesses = self.findProcessesByName(commandList[0])
-			if len(possibleProcesses) == 0:
-				# goodness, the app is not running anywhere and it has no children
-				# this is a disaster
-				return False
-			else:
-				# check to see if it worked
-				foundWorkingOne = False
-				pidToUse = 0 # just a dummy number
-				for pid in possibleProcesses:
-					self.appInstance.connect(process=pid)
-					if len(self.appInstance.windows()) != 0:
-						# wow, this process has windows! Lets use it!
-						foundWorkingOne = True
-						pidToUse = pid
-						# we have what we need, lets get out of here
-						break
-				if foundWorkingOne:
-					# yay, register them. The application is already connected
-					self.pid = pidToUse
-					self.usedExisting = True
+			# maybe use best_match=commandList[0].split(".")[0]
+			# we have to search through existing windows
+			for window in desktopInstance.windows():
+				if int(window.handle) not in hwnds:
+					self.usedExisting = False
+					self.mainWindow = window
+					# break out of function
 					return True
-				else:
-					# I dont know what to do? There are places where this process is running
-					# But none of them have windows
-					return False
-
-	def getMainWindow(self, commandList, getAppWorked):
-		if getAppWorked is True:
-			self.mainWindow = self.appInstance.top_window()
-		else:
-			# start app seperately
-			self.usedExisting = False
-			self.pid = subprocess.Popen(commandList, stdout=self.DEVNULL).pid
-			# gets executable without extension
-			# most apps follow this pattern
-			self.mainWindow = Desktop(backend="win32").window(best_match=commandList[0].split(".")[0])
+			# if it reached here, nothing has been found
+			return False
 
 	def kill(self):
 		self.breakdownScreenshotBitmap()
@@ -156,6 +128,6 @@ class Main():
 	def killPid(self, pid):
 		subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=pid), stdout=self.DEVNULL)
 		
-instance = Main([r"C:\Windows\ImmersiveControlPanel\SystemSettings.exe"])
+instance = Main([r"C:\Program Files\Mozilla Firefox\firefox.exe"])
 instance.getScreenshot().save("thing1.png")
 instance.kill()
