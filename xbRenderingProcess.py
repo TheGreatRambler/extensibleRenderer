@@ -9,6 +9,8 @@ import queue
 import helpers.h
 import array
 
+import SETTINGS
+
 # experimental implementation that is on a different process
 
 
@@ -23,6 +25,8 @@ class renderingProcess(multiprocess.Process):
 	taskQueue = None
 	resultQueue = None
 	needsToStop = False
+
+	currentTime = 0
 
 	def __init__(self, task_queue, result_queue):
 		super().__init__()
@@ -78,7 +82,7 @@ class renderingProcess(multiprocess.Process):
 		for pluginName in self.allPossiblePlugins:
 			# plugin settings should be pickleable
 			pluginSettings.append((pluginName, self.allPossiblePlugins[pluginName].PLUGIN_SETTINGS))
-		self._return(pluginSettings)
+		self._return(("settings", pluginSettings))
 
 	# functions pertaining to the current plugin
 	def _setPlugin(self, pluginName, wantInstance):
@@ -101,6 +105,7 @@ class renderingProcess(multiprocess.Process):
 		self.currentPlugin.setResolution(width, height)
 
 	def _setTime(self, timeInMilliseconds):
+		self.currentTime = timeInMilliseconds
 		self.currentPlugin.setTime(timeInMilliseconds)
 
 	def _setValue(self, valueName, value):
@@ -109,11 +114,12 @@ class renderingProcess(multiprocess.Process):
 
 	def _render(self):
 		imageRender = self.currentPlugin.getImage()
-		self._return(imageRender)
+		# pil images are pickleable
+		self._return(("render", self.currentTime, imageRender))
 
 	def _getInfo(self):
 		# returns all plugin settings as dict
-		self._return(self.currentPluginClass.PLUGIN_SETTINGS)
+		self._return(("info", self.currentPluginClass.PLUGIN_SETTINGS))
 
 	# internal functions
 	def _return(self, value):
@@ -126,7 +132,7 @@ class renderingProcess(multiprocess.Process):
 		for plugin in dir(pluginModule):
 			if plugin.startswith("Gp"):  # yes, its a graphics plugin!
 				thisPlugin = importlib.import_module("plugins." + plugin)
-				if not thisPlugin.PLUGIN_SETTINGS:
+				if not hasattr(thisPlugin, "PLUGIN_SETTINGS"):
 					thisPlugin.PLUGIN_SETTINGS = {}  # initialize to empty dict
 				thisPlugin.B_V = {  # built in variables available at runtime
 					"FILE_NAME": os.path.basename(thisPlugin.__file__),
@@ -151,6 +157,10 @@ class renderInterface():
 	allResults = None
 
 	renderProcess = None
+
+	resultCallback = lambda: None # no-op function
+
+	info = None
 	def __init__(self):
 		self.instructionQueue = multiprocess.Queue()
 		self.resultQueue = multiprocess.Queue()
@@ -177,6 +187,8 @@ class renderInterface():
 				else:
 					# it is okay, keep appending
 					self.allResults.append(immidiateResult)
+					# notify the caller that results have been appended
+					self.resultCallback()
 			except queue.Empty:
 				# no items to read yet
 				pass
@@ -184,26 +196,58 @@ class renderInterface():
 	def pluginSetPlugin(self, pluginName, wantInstance=True):
 		self.rawInstruction(("setPlugin", pluginName, wantInstance))
 
+		# get the info about the plugin now to help out the caller
+		self.getPluginInfo()
+		def __setPluginInfo():
+			mostRecent = self.getMostRecentResult()
+			if mostRecent[0] == "info":
+				# use the default plugin settings as a base for the existing
+				self.info = {**SETTINGS.defaultSettings, **mostRecent[1]}
+				self.onResult(None) # clear the callback
+		self.onResult(__setPluginInfo)
+
+		while self.info is None:
+			# wait for the plugin to return it
+			pass
+
+		return self
+
 	def pluginEndPlugin(self):
 		self.rawInstruction("endPlugin")
+		return self
 
 	def pluginSetResolution(self, width, height):
 		self.rawInstruction(("setResolution", width, height))
+		return self
 
 	def pluginSetTime(self, timeInMilliseconds):
 		self.rawInstruction(("setTime", timeInMilliseconds))
+		return self
 
 	def pluginSetValue(self, valueName, value):
 		self.rawInstruction(("setValue", valueName, value))
+		return self
 
 	def pluginRender(self):
 		self.rawInstruction("render")
+		return self
 		
 	def rawInstruction(self, instruction):
 		self.instructionQueue.put_nowait(instruction)
 
 	def getPluginInfo(self):
 		self.rawInstruction("getInfo")
+		return self
+
+	def onResult(self, callback):
+		if callback is None:
+			self.resultCallback = lambda: None
+		else:
+			self.resultCallback = callback
+		return self
+	
+	def getMostRecentResult(self):
+		return self.allResults[-1]
 
 	def stop(self):
 		# send tuple with stop instruction
@@ -215,14 +259,17 @@ class renderInterface():
 		# returns the results, so the main program can deal with them
 		return self.allResults
 
-def createMultiCoreInterface():
+class createMultiCoreInterface():
 	pluginInterfaces = []
 	processesMillisecondsAssigned = []
 
 	coreNum = None
 	pluginName = None
 	def __init__(self, coreNum, millisecondRanges, pluginName, fps):
-		self.coreNum = coreNum
+		self.coreNum = 1
+		if renderInterface().pluginSetPlugin(pluginName).info["RENDER_IN_ORDER"] is False:
+			# YAY, we can multiprocess!
+			self.coreNum == coreNum
 		self.pluginName = pluginName
 		# runs function async in background
 		for i in range(0, coreNum):
@@ -237,17 +284,31 @@ def createMultiCoreInterface():
 			# unpair first
 			millisecond, coreNum = helpers.h.elegantUnpair(pair)
 			# assign the millisecond to the process
-			processesMillisecondsAssigned[coreNum].append(millisecond)
+			self.processesMillisecondsAssigned[coreNum].append(millisecond)
 	def start(self):
 		for coreNum in range(0, self.coreNum):
 			thisRenderInterface = self.pluginInterfaces[coreNum]
 			# set plugin
 			thisRenderInterface.pluginSetPlugin(self.pluginName)
 			millisecondsToAssign = self.processesMillisecondsAssigned[coreNum]
-			for millisecond in millisecondsToAssign:
-				# assign instructions to render for each process
-				thisRenderInterface.pluginSetTime(millisecond)
-				thisRenderInterface.pluginRender()
-	def waitForEnd():
-		# TODO
-		pass
+			if thisRenderInterface.info["RENDER_IN_ORDER"] and coreNum == 0:
+				# well, all for being multiprocess, we have to fallback to being linear
+				# we know there is one core because we assured that earlier
+				# we have to get the last millisecond in the array
+				lastMillisecond = max(millisecondsToAssign)
+				# go in order from the first millisecond to the last
+				for millisecond in range(0, lastMillisecond):
+					# assign instructions to render for each process
+					thisRenderInterface.pluginSetTime(millisecond).pluginRender()
+			else:
+				for millisecond in millisecondsToAssign:
+					# assign instructions to render for each process
+					thisRenderInterface.pluginSetTime(millisecond).pluginRender()
+	def waitForEnd(self):
+		allResults = []
+		for plugin in self.pluginInterfaces:
+			allResults.extend(plugin.stop())
+		# remove all results not pertaining to rendering
+		allResults = [x for x in allResults if x[0] == "render"]
+		# TODO fix this up
+		return allResults

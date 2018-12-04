@@ -58,7 +58,8 @@ function setupCanvasCtx() {
 				},
 				c: ctx.canvas,
 				x: ctx,
-				t: 0
+				t: 0,
+				u: new Function(code) // some dweets use their own code
 			};
 			vmScript = new vm.Script(code);
 			vmContext = vm.createContext(vmSandbox);
@@ -130,6 +131,7 @@ function renderAndPrint() {
 		}
 	}
 	*/
+	// quick compression
 	var compressedData = lzFour.compress(imageData);
 	serverAccessableData["dweetFile"] = compressedData
 	// signal python that the data is on the server

@@ -13,3 +13,13 @@ theme = DotMap({
 render = DotMap({
 	"default_resolution": (800, 600)
 })
+
+# plain dict
+defaultSettings = {
+	"NAME": "<not set>",
+	"DESCRIPTION": "<not set>",
+	"CATEGORY": "<not set>",
+	"RENDER_IN_ORDER": False,
+	"REQUIREMENTS": [],
+	"VARIABLES": None
+}

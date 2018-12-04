@@ -1,6 +1,7 @@
 import click
 
 import yaml
+import json
 import signal
 import sys
 import os
@@ -12,6 +13,8 @@ import xbRenderingProcess as xb
 # the message to be displayed when seeing the version
 VERSION_MESSAGE = None
 VERSION = "0.0.1"
+
+MAIN_FILENAME = "python xr.py"
 
 def setVersionGraphic():
 	VERSION_GRAPHIC = None
@@ -44,37 +47,36 @@ def cli():
 
 @cli.command()
 @click.option("-i", "--input-plugin", "inputPlugin", type=click.STRING, required=True)
-@click.option("-o", "--output-plugin", "outputPlugin", type=click.STRING, required=False)
 @click.option("-p", "--processes", "processes", type=int, required=False, default=getNumCores())
 @click.option("-f", "--fps", "fps", type=int, required=False, default=60) # not a shabby speed
-def render(inputPlugin, outputPlugin, processes, fps):
-	pass
+@click.option("-m", "--milliseconds", "millisecondRanges", type=click.STRING, required=True)
+def render(inputPlugin, processes, fps, millisecondRanges):
+	# pylint complains about the argument number
+	# TODO stuck when creating this instance for dwitter
+	instance = xb.createMultiCoreInterface(processes, json.loads(millisecondRanges), inputPlugin, fps) #pylint: disable=E1121
+	print(len(instance.start().waitForEnd()))
 
 @cli.command()
-@click.option("-i", "--input-plugin", "inputPlugin", type=click.STRING, required=False)
-@click.option("-o", "--output-plugin", "outputPlugin", type=click.STRING, required=False)
+@click.option("-i", "--input-plugin", "inputPlugin", type=click.STRING, required=True)
 @click.option("-j", "--json", "notPretty", required=False, is_flag=True, default=False)
-def info(inputPlugin, outputPlugin, notPretty):
+def info(inputPlugin, notPretty):
 	# print info about plugins and exit
 	# print info for each plugin and be done
 	# creates a quick instance
 	instance = xb.renderInterface()
-	if inputPlugin is not None:
-		# don't create instance
-		instance.pluginSetPlugin(inputPlugin, False)
-		instance.getPluginInfo()
-		allResults = instance.stop()
-		# prints the last element in the return array, which is the PLUGIN_SETTINGS dict
-		# yaml makes pretty printing, only reason
-		if notPretty is not True:
-			click.echo("\n" + yaml.dump(allResults[-1], indent=4, default_flow_style=False))
-		else:
-			click.echo(allResults[-1])
-	# outputPlugin not yet supported
+	# don't create instance
+	instance.pluginSetPlugin(inputPlugin, False).getPluginInfo()
+	allResults = instance.stop()
+	# prints the last element in the return array, which is the PLUGIN_SETTINGS dict
+	# yaml makes pretty printing, only reason
+	if notPretty is not True:
+		click.echo("\n" + yaml.dump(allResults[-1], indent=4, default_flow_style=False))
+	else:
+		click.echo(json.dumps(allResults[-1], indent=4))
 
 
 def setupClickFunctions():
-	cli()
+	cli(prog_name=MAIN_FILENAME)
 
 def signal_handler(signal, frame):
 	sys.exit(0)

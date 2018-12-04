@@ -18,6 +18,7 @@ def getCorrectLocation(file):
 
 if __name__ == "__main__":
 	if len(sys.argv) == 1:
+		# not needed, but why not be explicit
 		start("text")
 	else:
 		start(sys.argv[1])

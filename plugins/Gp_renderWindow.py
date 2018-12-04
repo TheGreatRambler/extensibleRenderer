@@ -22,6 +22,7 @@ class Main():
 		# setup the application
 		# Output will say wether it failed or succeeded
 		applicationCreated = self.makeWorkingAppInstance(command)
+		print(applicationCreated)
 		# get screen size so window can be outside screen (TODO need to implement)
 		# just go for a massive value (last value is repaint ant 2 Nones are width and height)
 		self.appLocation = [3000, 3000]
@@ -106,6 +107,7 @@ class Main():
 		else:
 			# maybe use best_match=commandList[0].split(".")[0]
 			# we have to search through existing windows
+			# TODO no new windows appear for some reason
 			for window in desktopInstance.windows():
 				if int(window.handle) not in hwnds:
 					self.usedExisting = False
@@ -127,7 +129,8 @@ class Main():
 
 	def killPid(self, pid):
 		subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=pid), stdout=self.DEVNULL)
-		
+"""	
 instance = Main([r"C:\Program Files\Mozilla Firefox\firefox.exe"])
 instance.getScreenshot().save("thing1.png")
 instance.kill()
+"""

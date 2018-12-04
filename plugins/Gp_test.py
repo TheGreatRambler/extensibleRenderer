@@ -16,6 +16,7 @@ PLUGIN_SETTINGS = {
  "NAME": "Test",
  "DESCRIPTION": "Just a test",
  "CATEGORY": "Etc",
+ "RENDER_IN_ORDER": True, # the frames must be rendered in order because they affect one another
  "REQUIREMENTS": ["pexpect"], # list of requirements (not needed now)
  "VARIABLES": {
   "mainColor": {
@@ -77,12 +78,12 @@ class Main():
 		# we now have the server address
 		self.nodeServerAddress = self.dataFromJavascript
 	
-	def renderNextFrame(self, delta):
-		pass
-	
 	def setResolution(self, width, height):
 		pass
 	
 	def setTime(self, time):
-		pass
+		# send command
+		self.canvasInstance.sendline("time " + time)
+		# wait for it to finish
+		self.canvasInstance.expect_exact("next")
 	
