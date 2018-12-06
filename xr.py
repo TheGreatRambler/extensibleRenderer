@@ -2,6 +2,7 @@ import sys
 import os
 import subprocess
 import ctypes
+import atexit
 
 # comes from https://stackoverflow.com/a/19719292/9329945
 
@@ -10,7 +11,9 @@ def start(appType):
 		pass
 	else:
 		# assume its command line
-		subprocess.call(["python", getCorrectLocation("xrCommandLineInterface.py")] + sys.argv[1:])
+		process = subprocess.Popen(["python", getCorrectLocation("xrCommandLineInterface.py")] + sys.argv[1:], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		atexit.register(lambda: process.kill())
+		process.wait()
 
 def getCorrectLocation(file):
 	# concate this directory and the path to the file

@@ -54,7 +54,8 @@ def render(inputPlugin, processes, fps, millisecondRanges):
 	# pylint complains about the argument number
 	# TODO stuck when creating this instance for dwitter
 	instance = xb.createMultiCoreInterface(processes, json.loads(millisecondRanges), inputPlugin, fps) #pylint: disable=E1121
-	print(len(instance.start().waitForEnd()))
+	instance.start()
+	print(len(instance.waitForEnd()))
 
 @cli.command()
 @click.option("-i", "--input-plugin", "inputPlugin", type=click.STRING, required=True)

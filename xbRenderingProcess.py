@@ -195,7 +195,6 @@ class renderInterface():
 
 	def pluginSetPlugin(self, pluginName, wantInstance=True):
 		self.rawInstruction(("setPlugin", pluginName, wantInstance))
-
 		# get the info about the plugin now to help out the caller
 		self.getPluginInfo()
 		def __setPluginInfo():

@@ -6,6 +6,7 @@ import lz4.frame
 import requests
 
 import subprocess
+import io
 import os
 import signal
 import io
