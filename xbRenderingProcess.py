@@ -28,10 +28,14 @@ class renderingProcess(multiprocess.Process):
 
 	currentTime = 0
 
-	def __init__(self, task_queue, result_queue):
+	# lock for sync
+	currentLock = None
+
+	def __init__(self, task_queue, result_queue, currentLock):
 		super().__init__()
 		self.taskQueue = task_queue
 		self.resultQueue = result_queue
+		self.currentLock = currentLock
 		self.currentTaskGroup = []
 
 		self.allPossiblePlugins = self._getAllPossiblePlugins()
@@ -44,6 +48,8 @@ class renderingProcess(multiprocess.Process):
 			try:
 				data = self.taskQueue.get_nowait()
 				# have instructions!
+				# set lock to let manager know that we are processing
+				self.currentLock.acquire(True)
 				self.haveInstructionsToProcess = True
 				instruction = None
 				if type(data) == str:
@@ -69,6 +75,8 @@ class renderingProcess(multiprocess.Process):
 				elif instruction == "SHUTDOWN":
 					self._stop()
 					# breaking the while loop is handled by _stop
+				# release lock
+				self.currentLock.release()
 			except queue.Empty:
 				# no items to read anymore
 				if self.needsToStop:
@@ -138,7 +146,7 @@ class renderingProcess(multiprocess.Process):
 					"FILE_NAME": os.path.basename(thisPlugin.__file__),
 					"FILE_DIR": os.path.dirname(thisPlugin.__file__),
 					"FILE_PATH": thisPlugin.__file__
-				};
+				}
 				thePlugins[plugin] = thisPlugin
 		return thePlugins
 
@@ -158,16 +166,17 @@ class renderInterface():
 
 	renderProcess = None
 
-	resultCallback = lambda: None # no-op function
-
 	info = None
+
+	# lock to block for results
+	resultLock = multiprocess.Lock()
 	def __init__(self):
 		self.instructionQueue = multiprocess.Queue()
 		self.resultQueue = multiprocess.Queue()
 		self.allResults = []
 
 		# returns a multiprocessing.Process
-		self.renderProcess = renderingProcess(self.instructionQueue, self.resultQueue)
+		self.renderProcess = renderingProcess(self.instructionQueue, self.resultQueue, self.resultLock)
 		self.renderProcess.start()
 
 		# runs function async in background
@@ -187,28 +196,14 @@ class renderInterface():
 				else:
 					# it is okay, keep appending
 					self.allResults.append(immidiateResult)
-					# notify the caller that results have been appended
-					self.resultCallback()
 			except queue.Empty:
 				# no items to read yet
 				pass
 
 	def pluginSetPlugin(self, pluginName, wantInstance=True):
-		self.rawInstruction(("setPlugin", pluginName, wantInstance))
-		# get the info about the plugin now to help out the caller
-		self.getPluginInfo()
-		def __setPluginInfo():
-			mostRecent = self.getMostRecentResult()
-			if mostRecent[0] == "info":
-				# use the default plugin settings as a base for the existing
-				self.info = {**SETTINGS.defaultSettings, **mostRecent[1]}
-				self.onResult(None) # clear the callback
-		self.onResult(__setPluginInfo)
-
-		while self.info is None:
-			# wait for the plugin to return it
-			pass
-
+		self.rawInstructionSync(("setPlugin", pluginName, wantInstance))
+		# merge recieved info with default
+		self.info = {**SETTINGS.defaultSettings, **self.resultQueue.get()[1]}
 		return self
 
 	def pluginEndPlugin(self):
@@ -234,15 +229,16 @@ class renderInterface():
 	def rawInstruction(self, instruction):
 		self.instructionQueue.put_nowait(instruction)
 
+	def rawInstructionSync(self, instruction):
+		print("hai")
+		self.rawInstruction(instruction)
+		# this will block while the lock is held
+		self.resultLock.acquire(True)
+		self.resultLock.release()
+		print("bye")
+
 	def getPluginInfo(self):
 		self.rawInstruction("getInfo")
-		return self
-
-	def onResult(self, callback):
-		if callback is None:
-			self.resultCallback = lambda: None
-		else:
-			self.resultCallback = callback
 		return self
 	
 	def getMostRecentResult(self):
