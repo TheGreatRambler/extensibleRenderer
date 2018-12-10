@@ -296,6 +296,7 @@ def fastFloor(float):
 	# works for positive numbers only
 	return int(float)
 
+"""
 def elegantPair(x, y):
 	# https://codepen.io/sachmata/post/elegant-pairing
 	if x >= y:
@@ -311,14 +312,19 @@ def elegantUnpair(z):
 		return [sqrtz, z - sqz - sqrtz]
 	else:
 		return [z - sqz, sqrtz]
+"""
 
 def setIndex(array, index, value, padValue):
 	# pads the array so indices beyond the length can be set
+	# need to add one because the length of an array 
+	# is one more than the index of the last element
+	index += 1
 	arrayLength = len(array)
 	if index > arrayLength:
-		for i in range(0, index - arrayLength):
+		for _ in range(0, index - arrayLength):
 			array.append(padValue)
-	array[index] = value
+	# revert back to real index
+	array[index - 1] = value
 
 
 def getListOfAssignmentsForCores(numOfCores, millisecondRanges, millisecondSkip):
@@ -326,16 +332,23 @@ def getListOfAssignmentsForCores(numOfCores, millisecondRanges, millisecondSkip)
 	# might use char array if it works
 	isSet = array.array("H") # unsigned short array, will be set to 1 if the element has been assigned
 	assignmentArray = array.array("L") # unsigned long array, might need to be long long (Q)
-	for rangeNum in range(0, fastFloor(len(millisecondRanges) / 2)): # will get the number of ranges
+	for rangeNum in range(0, int(len(millisecondRanges) / 2)): # will get the number of ranges
 		# get the start and end of each range
 		millStart = millisecondRanges[rangeNum * 2]
 		millEnd = millisecondRanges[rangeNum * 2 + 1]
-		for millisecond in range(millStart, millEnd):
-			# 1 is alias for true
-			if millisecond <= len(isSet) and isSet[millisecond] == 1:
-				# the millisecond has already been set
-				# append paired to save space
-				assignmentArray.append(elegantPair(millisecond, currentCoreAssignment))
+		# loops over with a float
+		currentMillisecond = millStart
+		stop = False
+		while not stop:
+			# convert to int again
+			millisecond = fastFloor(currentMillisecond)
+			# 0 is alias for false
+			if millisecond >= len(isSet) or isSet[millisecond] == 0:
+				# the millisecond has not been set
+				# time to add it
+				# append one after the other
+				assignmentArray.append(millisecond)
+				assignmentArray.append(currentCoreAssignment)
 				# now exists, so this must change
 				setIndex(isSet, millisecond, 1, 0)
 				if currentCoreAssignment == (numOfCores - 1):
@@ -343,4 +356,8 @@ def getListOfAssignmentsForCores(numOfCores, millisecondRanges, millisecondSkip)
 					currentCoreAssignment = 0
 				else:
 					currentCoreAssignment += 1
+			# basically equivilent to a do-while loop
+			stop = (currentMillisecond > millEnd)
+			# add the millisecondSkip to our current millisecond
+			currentMillisecond += millisecondSkip
 	return assignmentArray

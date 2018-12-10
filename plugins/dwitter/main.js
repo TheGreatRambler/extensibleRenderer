@@ -8,13 +8,12 @@ const lzFour = require("lz4js");
 const findFreePort = require("find-free-port");
 const ip = require("ip");
 
+// default canvas size, but it can be different
+var width = 1920;
+var height = 1080;
 
-// canvas always the same size
-const ctx = canvas.createCanvas(1920, 1080).getContext("2d");
-// need to make background white and then reset fillstyle
-ctx.fillStyle = "white";
-ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-ctx.fillStyle = "black";
+// make the canvas massive so it can acommodate everything
+const ctx = canvas.createCanvas(10000, 10000).getContext("2d");
 
 var currentMillisecondTime = 0;
 
@@ -91,21 +90,23 @@ function setup() {
 			});
 
 			rl.on("line", async function (line) {
-				var data = line.split(" ")[1];
+				var data = line.split(" ");
 				switch (line.split(" ")[0]) {
 					// choose based on command
-					case "time":
-						currentMillisecondTime = Number(data);
-						break;
 					case "render":
-						renderAndPrint();
+						// render with millisecond range
+						renderAndPrint(Number(data[1]), Number(data[2]), Number(data[3]));
 						break;
 					case "address":
 						returnAddress();
 						break;
 					case "setDweet":
-						currentDweetNum = Number(data);
+						currentDweetNum = Number(data[1]);
 						await setupCanvasCtx();
+						break;
+					case "setSize":
+						width = Number(data[1]);
+						height = Number(data[2]);
 						break;
 				}
 				console.log("next");
@@ -116,27 +117,38 @@ function setup() {
 	});
 }
 
-function renderAndPrint() {
-	vmContext.t = currentMillisecondTime / 1000; // number of seconds as a float
-	vmScript.runInContext(vmContext);
-	var imageData = ctx.getImageData(0, 0, 1920, 1080).data;
-	// will keep alpha even though it is not needed
-	/*
-	var realImageData = new Uint8Array((imageData.length * (3 / 4)) | 0); // should be an int because of rounding
-	var index = 0;
-	for (var i = 0; i < imageData.length; i++) {
-		if (i % 4 === 0) {
-			realImageData[index] = imageData[i];
-			index++;
-		}
+function concateTypedArrays(type, arrays) {
+	// http://2ality.com/2015/10/concatenating-typed-arrays.html
+	var totalLength = 0;
+	for (var i = 0; i < arrays.length; i++) {
+		totalLength += arrays[i].length;
 	}
-	*/
-	// quick compression
-	var compressedData = lzFour.compress(imageData);
-	serverAccessableData["dweetFile"] = compressedData
-	// signal python that the data is on the server
-	// implied by next
-	//console.log("done");
+	var result = new type(totalLength);
+	var offset = 0;
+	for (var i = 0; i < arrays.length; i++) {
+		console.log(offset)
+		result.set(arrays[i], offset);
+		offset += arrays[i].length;
+	}
+	return result;
+}
+
+function renderAndPrint(start, end, offset) {
+	var allRenderings = []
+	for (var millisecond = start; millisecond <= end;) {
+		vmContext.t = millisecond / 1000; // number of seconds as a float
+		vmScript.runInContext(vmContext);
+		// add the image to the renderings
+		allRenderings.push(ctx.getImageData(0, 0, width, height).data);
+		// notify python that we have rendered one
+		console.log("Drender " + millisecond)
+		// needs to be put outside
+		millisecond += offset
+	}
+	console.log("we good")
+	var allImages = concateTypedArrays(Uint8Array, allRenderings);
+	// each pixel will be one byte, so it works perfectly
+	serverAccessableData["dweetFile"] = allImages // sends all of them concated
 }
 
 function returnAddress() {
@@ -144,8 +156,3 @@ function returnAddress() {
 }
 
 setup();
-
-process.on("SIGTERM", function () {
-	// can do stuff
-	process.exit(0);
-});

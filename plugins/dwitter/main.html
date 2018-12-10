@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<title>d</title>
+</head>
+
+<body>
+	<script>
+		var canvas = document.createElement("canvas");
+		var ctx = canvas.getContext("2d");
+
+		var port;
+
+		var websocketInstance;
+
+		var context = {
+			// elapsed time
+			t: 0,
+			// sin
+			S: Math.sin,
+			// cos
+			C: Math.cos,
+			// tan
+			T: Math.tan,
+			// rgba strings
+			R: function (r, g, b, a) {
+				// if no alpha, make it 1
+				// round all colors
+				var rgbaString = "rgba(" + (r | 0) + "," + (g | 0) + "," + (b | 0) + "," + (a || 1) + ")";
+				return rgbaString;
+			},
+			// canvas
+			c: canvas,
+			// context
+			x: ctx
+			// the function itself will be passed, but not here
+		}
+
+		var dweetFunction;
+
+		function setDweet(dweetNum) {
+			fetch("https://www.dwitter.net/api/dweets/" + dweetNum).then(function (response) {
+				return response.json();
+			}).then(function (dweetJson) {
+				// we have the json
+				// create function from code string
+				dweetFunction = new Function("t", "S", "C", "T", "R", "c", "x", "u", dweetJson.code);
+			});
+		}
+
+		function renderFromStartToEnd(start, end) {
+			window.print("I am here " + start + " " + end);
+			var allRenderings = []
+			for (var i = start; i <= end; i++) {
+				context.t = i;
+				// make a shorter version for easy referring
+				var c = context;
+				// call function, canvases passed by reference
+				dweetFunction(c.t, c.S, c.C, c.T, c.R, c.c, c.x, dweetFunction);
+				// send image data
+				var thisImageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+				window.print("hi");
+				allRenderings.push(thisImageData);
+			}
+			// render all pixel data as cbor, returning the pixel data through websocket
+			// block while waiting for websocket to open
+			while (websocketInstance.readyState !== 1) {
+				// do nothing while waiting
+				;
+			}
+			websocketInstance.send(CBOR.encode(allRenderings));
+		}
+
+		function setSize(width, height) {
+			canvas.width = width;
+			canvas.height = height;
+		}
+
+		function setPort(portNumber) {
+			port = portNumber;
+		}
+
+		function startClient() {
+			// open up to localhost
+			websocketInstance = new WebSocket("ws://localhost:" + port);
+			// set to binary type
+			websocketInstance.binaryType = "arraybuffer";
+		}
+	</script>>
+</body>
+
+</html>

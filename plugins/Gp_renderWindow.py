@@ -7,7 +7,6 @@ from pywinauto import Desktop
 from PIL import Image
 import subprocess
 import os
-import psutil
 # windows only solution
 # the way to get all applications (including jars and programs that start through the command line) is
 # by starting cmd.exe with this then manually putting in the command needed, listen for further windows,

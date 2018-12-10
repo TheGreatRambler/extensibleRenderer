@@ -1,3 +1,4 @@
+"""
 import helpers.h
 from os import walk
 
@@ -11,3 +12,5 @@ for file in f:
 		__all__.append(file[:-3])  # remove extension
 
 from . import *  # IMPORTANT!
+"""
+# so that not every module is quickly imported, nothing is going to be set

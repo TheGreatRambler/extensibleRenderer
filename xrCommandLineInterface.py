@@ -14,7 +14,7 @@ import xbRenderingProcess as xb
 VERSION_MESSAGE = None
 VERSION = "0.0.1"
 
-MAIN_FILENAME = "python xr.py"
+MAIN_FILENAME = "python xr.py --text"
 
 def setVersionGraphic():
 	VERSION_GRAPHIC = None
@@ -50,7 +50,8 @@ def cli():
 @click.option("-p", "--processes", "processes", type=int, required=False, default=getNumCores())
 @click.option("-f", "--fps", "fps", type=int, required=False, default=60) # not a shabby speed
 @click.option("-m", "--milliseconds", "millisecondRanges", type=click.STRING, required=True)
-def render(inputPlugin, processes, fps, millisecondRanges):
+@click.option("-v", "--verbose", "verbose", is_flag=True, required=False, default=False)
+def render(inputPlugin, processes, fps, millisecondRanges, verbose):
 	# pylint complains about the argument number
 	# TODO stuck when creating this instance for dwitter
 	instance = xb.createMultiCoreInterface(processes, json.loads(millisecondRanges), inputPlugin, fps) #pylint: disable=E1121
@@ -60,24 +61,25 @@ def render(inputPlugin, processes, fps, millisecondRanges):
 @cli.command()
 @click.option("-i", "--input-plugin", "inputPlugin", type=click.STRING, required=True)
 @click.option("-j", "--json", "notPretty", required=False, is_flag=True, default=False)
-def info(inputPlugin, notPretty):
+@click.option("-v", "--verbose", "verbose", is_flag=True, required=False, default=False)
+def info(inputPlugin, notPretty, verbose):
 	# print info about plugins and exit
 	# print info for each plugin and be done
 	# creates a quick instance
-	instance = xb.renderInterface()
+	instance = xb.renderInterface(verbose)
 	# don't create instance
-	instance.pluginSetPlugin(inputPlugin, False).getPluginInfo()
-	allResults = instance.stop()
+	info = instance.pluginSetPlugin(inputPlugin, False).info
 	# prints the last element in the return array, which is the PLUGIN_SETTINGS dict
 	# yaml makes pretty printing, only reason
 	if notPretty is not True:
-		click.echo("\n" + yaml.dump(allResults[-1], indent=4, default_flow_style=False))
+		click.echo("\n" + yaml.dump(info, indent=4, default_flow_style=False))
 	else:
-		click.echo(json.dumps(allResults[-1], indent=4))
+		click.echo(json.dumps(info, indent=4))
+	instance.stop()
 
 
 def setupClickFunctions():
-	cli(prog_name=MAIN_FILENAME)
+	cli(prog_name=MAIN_FILENAME) #pylint: disable=E1123
 
 def signal_handler(signal, frame):
 	sys.exit(0)

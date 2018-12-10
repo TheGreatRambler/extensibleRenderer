@@ -1,17 +1,20 @@
 from PIL import Image
+
 import pexpect
 import pexpect.popen_spawn
 import lz4
 import lz4.frame
 import requests
+# use for fake file
+
 
 import subprocess
-import io
 import os
 import signal
-import io
 import sys
+import io
 from helpers.h import onWriteMemoryFile
+
 
 PLUGIN_SETTINGS = {
  "NAME": "Test",
@@ -38,29 +41,44 @@ class Main():
 		javascriptFileCommand = "node " + os.path.join(os.path.dirname(os.path.realpath(__file__)), "dwitter", "main.js")
 		self.inMemoryLogHistory = onWriteMemoryFile(self.onCommandWrite) # simple on-write memory object
 		self.canvasInstance = pexpect.popen_spawn.PopenSpawn(cmd=javascriptFileCommand, logfile=self.inMemoryLogHistory)
+		# redirect all outputs to in memory thing
+		self.redirectCanvasInstanceToNothing()
 		self.setup()
 
 	def _delete(self):
-		self.canvasInstance.kill(signal.SIGTERM) # close node instance
+		self.canvasInstance.kill(signal.SIGKILL) # kill node instance completely
 
 	def _change_var(self, variableName):
-		self.getImage().save("test.png")
-
+		pass
 
 	def onCommandWrite(self, line):
 		if line.startswith("D"):
 			# remove D so the data is valid
 			self.dataFromJavascript = line[1:] # removes the "D"
 
-	def getImage(self):
-		self.canvasInstance.sendline("render")
+	def redirectCanvasInstanceToNothing(self):
+		# monkey patch the instance
+		"""
+		self.canvasInstance.proc.stdout = io.BytesIO()
+		self.canvasInstance.proc.stdin = io.BytesIO()
+		self.canvasInstance.proc.stderr = io.BytesIO()
+		"""
+
+	def getImagesInOrder(self, milliRange, skip):
+		# there is no getImage for this kind of rendering function
+		# there is also no setTime
+		# render all in a row
+		self.canvasInstance.sendline("render " + str(milliRange[0]) + " " + str(milliRange[1]) + " " + str(skip))
 		# when next appears, the rendering has finished
 		self.canvasInstance.expect_exact("next")
-		# listen on server to find the data
-		imageRequest = requests.get(self.nodeServerAddress + "/file")
-		# will have decoded image
-		imageRGBAData = Image.frombytes("RGBA", (1920, 1080), lz4.frame.decompress(data=imageRequest.content))
-		return imageRGBAData
+		# returns byte array
+		allImageRequests = requests.get(self.nodeServerAddress + "/file")
+		# the size is the width times the height
+		sizeOfPixelBlock = self.width * self.height
+		arrayOfPixelData = [allImageRequests[i:i+sizeOfPixelBlock] for i in range(0, len(allImageRequests), sizeOfPixelBlock)]
+		images = [Image.frombytes("RGBA", (self.width, self.height), pixels) for pixels in arrayOfPixelData]
+		print(len(images))
+		return images
 
 	def setup(self):
 		# listen for start (blocking)
@@ -78,13 +96,13 @@ class Main():
 		self.canvasInstance.expect_exact("next")
 		# we now have the server address
 		self.nodeServerAddress = self.dataFromJavascript
+		# set size to default value
+		self.setResolution(1920, 1080)
 	
 	def setResolution(self, width, height):
-		pass
-	
-	def setTime(self, time):
-		# send command
-		self.canvasInstance.sendline("time " + time)
-		# wait for it to finish
+		self.width = width
+		self.height = height
+		# set size
+		self.canvasInstance.sendline("setSize " + str(width) + " " + str(height))
+		# wait for end
 		self.canvasInstance.expect_exact("next")
-	
