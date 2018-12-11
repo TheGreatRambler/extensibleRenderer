@@ -13,4 +13,4 @@ This piece of software is hard to explain, but the point of this program is to a
 * [Biham–Middleton–Levine traffic model](http://htmlpreview.github.io/?https://raw.githubusercontent.com/MaciekBaron/BMLTrafficJS/master/index.html): 2e+25 is a cool rule
 * [1D Cellular Automata](https://github.com/ogham/mindless-automata): Implement all 256 rules
 * [Gray-Scott Model](http://pmneila.github.io/jsexp/grayscott/): Choose own color schemes
-* Minecraft rendering! Using [window plugin](plugins/Gp_renderWindows.py) already included
+* Minecraft rendering! Using [window plugin](plugins/Gp_renderWindow.py) already included
