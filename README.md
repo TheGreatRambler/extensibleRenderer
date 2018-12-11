@@ -1,4 +1,5 @@
 # extensibleRenderer
+# VERY EARLY STAGES, COME BACK LATER FOR A REAL IMPLEMENTATION!
 > "Render extensibly"
 
 ## Reason
@@ -7,3 +8,9 @@ This piece of software is hard to explain, but the point of this program is to a
 ## How to install
 1. Get Pywinauto from GitHub
 2. Later instructions to come...
+
+## Plugins that will probably be implemented:
+* [Biham–Middleton–Levine traffic model](http://htmlpreview.github.io/?https://raw.githubusercontent.com/MaciekBaron/BMLTrafficJS/master/index.html): 2e+25 is a cool rule
+* [1D Cellular Automata](https://github.com/ogham/mindless-automata): Implement all 256 rules
+* [Gray-Scott Model](http://pmneila.github.io/jsexp/grayscott/): Choose own color schemes
+* Minecraft rendering! Using [window plugin](plugins/Gp_renderWindows.py) already included
