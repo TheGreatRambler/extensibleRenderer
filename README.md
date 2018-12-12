@@ -14,4 +14,4 @@ This piece of software is hard to explain, but the point of this program is to a
 * [1D Cellular Automata](https://github.com/ogham/mindless-automata): Implement all 256 rules
 * [Gray-Scott Model](http://pmneila.github.io/jsexp/grayscott/): Choose own color schemes
 * Minecraft rendering! Using [window plugin](plugins/Gp_renderWindow.py) already included
-* [Fractal Flame Algorithm](https://tariqksoliman.github.io/Fractal-Inferno/): Run on a shader probably
+* [Fractal Flame Algorithm](https://tariqksoliman.github.io/Fractal-Inferno/) or [this one](http://rectangleworld.com/demos/ChaosGame/chaos_game.html): Run on a shader probably
