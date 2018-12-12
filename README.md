@@ -17,3 +17,5 @@ This piece of software is hard to explain, but the point of this program is to a
 * [Fractal Flame Algorithm](https://tariqksoliman.github.io/Fractal-Inferno/): Run on a shader probably
 * [Chaos Game](http://rectangleworld.com/demos/ChaosGame/chaos_game.html)
 * [Inconvergent](https://img.inconvergent.net/generative/): The work this guy does is fantastic
+* [Shadertoy](https://www.shadertoy.com/): The best shaders on the internet
+* [Dwitter](https://www.dwitter.net/): The best javascript demos on the internet
