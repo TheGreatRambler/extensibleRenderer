@@ -1,0 +1,26 @@
+{
+  "name": "extensible_renderer",
+  "version": "1.0.0",
+  "description": "An extensible renderer for various visual phenomenon",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"no test yet\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheGreatRambler/extensibleRenderer.git"
+  },
+  "keywords": [
+    "renderer"
+  ],
+  "author": "TheGreatRambler",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TheGreatRambler/extensibleRenderer/issues"
+  },
+  "homepage": "https://github.com/TheGreatRambler/extensibleRenderer#readme",
+  "dependencies": {
+    "commander": "^2.19.0",
+    "is-valid-path": "^0.1.1"
+  }
+}
