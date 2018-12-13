@@ -20,7 +20,6 @@
   },
   "homepage": "https://github.com/TheGreatRambler/extensibleRenderer#readme",
   "dependencies": {
-    "commander": "^2.19.0",
-    "is-valid-path": "^0.1.1"
+    "commander": "^2.19.0"
   }
 }
