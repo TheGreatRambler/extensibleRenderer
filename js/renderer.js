@@ -5,6 +5,7 @@ const fs = require("fs");
 var renderer = function () {
 	this.results = [];
 	this.verbose = false;
+	this.startChild();
 }
 
 var p = renderer.prototype;
@@ -32,7 +33,7 @@ p.setPlugin = function (name) {
 		}
 	}
 	if (filePath) {
-		this.pluginProcess = cp.fork(filePath);
+		
 	}
 }
 
@@ -49,4 +50,21 @@ p.isPlugin = function (pluginName) {
 	});
 	// the plugin exists
 	return allFiles.includes(pluginName);
+};
+
+p.startChild = function() {
+	this.pluginChild = cp.fork(path.join(__dirname, "worker.js"));
+	this.pluginChild.on("message", function(message) {
+		if (message.flag = "returnedResult") {
+			this.appendResult(message.content);
+		}
+	});
+};
+
+p.sendMessage = function(message) {
+	this.pluginChild.send(message);
+};
+
+p.appendResult = function(result) {
+	this.results.append(result);
 };
