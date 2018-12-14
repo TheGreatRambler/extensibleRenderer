@@ -33,7 +33,12 @@ p.setPlugin = function (name) {
 		}
 	}
 	if (filePath) {
-		
+		this.sendMessage({
+			flag: "setPlugin",
+			data: filepath
+		});
+	} else {
+		throw new Error("Plugin not supported");
 	}
 }
 
