@@ -58,7 +58,9 @@ p.isPlugin = function (pluginName) {
 };
 
 p.startChild = function() {
-	this.pluginChild = cp.fork(path.join(__dirname, "worker.js"));
+	this.pluginChild = cp.fork(path.join(__dirname, "worker.js"), [], {
+		stdio: ["ignore", "ignore", "ignore", "ipc"]
+	});
 	this.pluginChild.on("message", function(message) {
 		if (message.flag = "returnedResult") {
 			this.appendResult(message.content);
