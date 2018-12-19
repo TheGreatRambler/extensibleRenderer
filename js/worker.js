@@ -12,7 +12,8 @@ var messageHandler = {
 			// call closing event handler on instance
 			thisModuleInstance.onClose();
 		}
-		thisModule = require(pluginPath);
+		// remove ".js" on end
+		thisModule = require(pluginPath.slice(0, -3));
 		thisModuleInstance = new thisModule.Main();
 	}
 }
