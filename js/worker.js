@@ -4,10 +4,10 @@ var thisModule;
 var thisModuleInstance;
 
 var messageHandler = {
-	"kill": function () {
+	"kill": function() {
 		// nothing yet
 	},
-	"setPlugin": function (pluginPath) {
+	"setPlugin": function(pluginPath) {
 		if (thisModule && thisModuleInstance) {
 			// call closing event handler on instance
 			thisModuleInstance.onClose();
@@ -18,7 +18,7 @@ var messageHandler = {
 	}
 }
 
-process.on("message", function (message) {
+process.on("message", function(message) {
 	// handles all instructions
 	// message.data can be undefined
 	messageHandler[message.flag](message.data);

@@ -5,6 +5,6 @@ module.exports.info = {
 	RENDER_IN_ORDER: true
 };
 
-module.exports.Main = function () {
+module.exports.Main = function() {
 	// stuff here
 };
