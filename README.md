@@ -19,3 +19,4 @@ This piece of software is hard to explain, but the point of this program is to a
 * [Inconvergent](https://img.inconvergent.net/generative/): The work this guy does is fantastic
 * [Shadertoy](https://www.shadertoy.com/): The best shaders on the internet
 * [Dwitter](https://www.dwitter.net/): The best javascript demos on the internet
+* [Colorful Game of Life](https://jaxry.github.io/colorful-life/): So cool
