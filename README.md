@@ -20,3 +20,4 @@ This piece of software is hard to explain, but the point of this program is to a
 * [Shadertoy](https://www.shadertoy.com/): The best shaders on the internet
 * [Dwitter](https://www.dwitter.net/): The best javascript demos on the internet
 * [Colorful Game of Life](https://jaxry.github.io/colorful-life/): So cool
+* Core Wars: Yet to find a good javascript emulator
