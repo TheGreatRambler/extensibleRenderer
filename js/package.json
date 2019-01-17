@@ -1,0 +1,30 @@
+{
+  "name": "er",
+  "version": "1.0.0",
+  "description": "Extensible Renderer",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheGreatRambler/extensibleRenderer.git"
+  },
+  "keywords": [
+    "nodejs",
+    "renderer",
+    "canvas"
+  ],
+  "author": "TheGreatRambler",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TheGreatRambler/extensibleRenderer/issues"
+  },
+  "homepage": "https://github.com/TheGreatRambler/extensibleRenderer#readme",
+  "dependencies": {
+    "canvas": "^2.2.0",
+    "get-port": "^4.1.0",
+    "ip": "^1.1.5",
+    "ws": "^6.1.2"
+  }
+}
