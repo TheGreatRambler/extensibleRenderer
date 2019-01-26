@@ -25,3 +25,4 @@ This piece of software is hard to explain, but the point of this program is to a
 * [RoboCom](https://github.com/felixge/js-robocom): Hard to find info on this
 * [AT-Robots](http://necrobones.com/atrobots/): No JS implementation
 * [Grobots](http://grobots.sourceforge.net/): Same as AT-Robots
+* [Codedoodles](http://codedoodl.es/): Awesome visuals like Dwitter
