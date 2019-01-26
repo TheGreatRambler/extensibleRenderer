@@ -27,3 +27,5 @@ This piece of software is hard to explain, but the point of this program is to a
 * [Grobots](http://grobots.sourceforge.net/): Same as AT-Robots
 * [Codedoodles](http://codedoodl.es/): Awesome visuals like Dwitter
 * [XScreenSaver](https://www.jwz.org/xscreensaver/): Cool screensavers
+* [Maze Generator](http://journal.stuffwithstuff.com/2014/12/21/rooms-and-mazes/): Cool maze
+* [Canvas Cycle](http://www.effectgames.com/demos/canvascycle/): Beautiful animated pixel art
