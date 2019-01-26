@@ -26,3 +26,4 @@ This piece of software is hard to explain, but the point of this program is to a
 * [AT-Robots](http://necrobones.com/atrobots/): No JS implementation
 * [Grobots](http://grobots.sourceforge.net/): Same as AT-Robots
 * [Codedoodles](http://codedoodl.es/): Awesome visuals like Dwitter
+* [XScreenSaver](https://www.jwz.org/xscreensaver/): Cool screensavers
